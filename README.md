@@ -1,1 +1,1 @@
-# MomCalendar
+# mom-calendar
