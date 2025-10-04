@@ -1,8 +1,8 @@
 {
   "name": "printable-calendar",
   "productName": "printable-calendar",
-  "version": "1.0.0",
-  "description": "My Electron application description",
+  "version": "0.1.2",
+  "description": "A printable calendar",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
@@ -39,6 +39,11 @@
     "vite": "^5.4.20"
   },
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.1"
+    "electron-squirrel-startup": "^1.0.1",
+    "update-electron-app": "^3.1.1"
+  },
+  "repository": {
+    "type": "github",
+    "url": "paulholtom/printable-calendar"
   }
 }

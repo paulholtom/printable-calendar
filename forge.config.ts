@@ -14,7 +14,7 @@ const gitHubPublisherConfig: PublisherGitHubConfig = {
     name: "printable-calendar"
   },
   prerelease: false,
-  draft: true,
+  draft: false,
 };
 
 const config: ForgeConfig = {
