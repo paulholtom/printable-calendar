@@ -10,7 +10,7 @@
 		"make": "electron-forge make",
 		"increase-version": "npm version minor",
 		"publish": "env-cmd electron-forge publish",
-		"release": "npm-s increase-version publish",
+		"release": "run-s increase-version publish",
 		"lint": "eslint --ext .ts,.tsx ."
 	},
 	"keywords": [],
