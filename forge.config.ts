@@ -6,6 +6,16 @@ import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import { PublisherGitHubConfig } from "@electron-forge/publisher-github";
+
+const gitHubPublisherConfig: PublisherGitHubConfig = {
+  repository: {
+    owner: "paulholtom",
+    name: "printable-calendar"
+  },
+  prerelease: false,
+  draft: true,
+};
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -18,6 +28,7 @@ const config: ForgeConfig = {
     new MakerRpm({}),
     new MakerDeb({}),
   ],
+  publishers: [{name: '@electron-forge/publisher-github', config: gitHubPublisherConfig}],
   plugins: [
     new VitePlugin({
       // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.
