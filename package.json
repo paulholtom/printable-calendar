@@ -1,16 +1,20 @@
 {
 	"name": "printable-calendar",
 	"productName": "printable-calendar",
-	"version": "0.2.0",
+	"version": "0.1.0",
 	"description": "A printable calendar",
 	"main": ".vite/build/main.js",
 	"scripts": {
 		"start": "electron-forge start",
 		"package": "electron-forge package",
 		"make": "electron-forge make",
-		"increase-version": "npm version minor",
+		"version:patch": "npm version patch",
+		"version:minor": "npm version minor",
+		"version:major": "npm version major",
 		"publish": "env-cmd electron-forge publish",
-		"release": "run-s increase-version publish",
+		"release:patch": "run-s version:patch publish",
+		"release:minor": "run-s version:minor publish",
+		"release:major": "run-s version:major publish",
 		"lint": "eslint --ext .ts,.tsx ."
 	},
 	"keywords": [],
