@@ -1,14 +1,16 @@
 {
 	"name": "printable-calendar",
 	"productName": "printable-calendar",
-	"version": "0.1.1",
+	"version": "0.1.0",
 	"description": "A printable calendar",
 	"main": ".vite/build/main.js",
 	"scripts": {
 		"start": "electron-forge start",
 		"package": "electron-forge package",
 		"make": "electron-forge make",
+		"increase-version": "npm version minor",
 		"publish": "env-cmd electron-forge publish",
+		"release": "npm-s increase-version publish",
 		"lint": "eslint --ext .ts,.tsx ."
 	},
 	"keywords": [],
@@ -35,6 +37,7 @@
 		"env-cmd": "^11.0.0",
 		"eslint": "^8.57.1",
 		"eslint-plugin-import": "^2.32.0",
+		"npm-run-all": "^4.1.5",
 		"prettier": "^3.6.2",
 		"typescript": "~4.5.4",
 		"vite": "^5.4.20"
@@ -43,8 +46,5 @@
 		"electron-squirrel-startup": "^1.0.1",
 		"update-electron-app": "^3.1.1"
 	},
-	"repository": {
-		"type": "github",
-		"url": "paulholtom/printable-calendar"
-	}
+	"repository": "https://github.com/paulholtom/printable-calendar"
 }
