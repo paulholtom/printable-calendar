@@ -1,12 +1,17 @@
 <!doctype html>
-<html>
+<html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<title>Hello World!</title>
+		<link rel="icon" type="image/svg+xml" href="/calendar-icon.svg" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta
+			http-equiv="Content-Security-Policy"
+			content="script-src 'self' 'unsafe-inline';"
+		/>
+		<title>Printable Calendar</title>
 	</head>
 	<body>
-		<h1>💖 Hello World changed again!</h1>
-		<p>Welcome to your Electron application.</p>
+		<div id="app"></div>
 		<script type="module" src="/src/renderer.ts"></script>
 	</body>
 </html>
