@@ -1,7 +1,8 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import started from "electron-squirrel-startup";
 import path from "node:path";
 import { updateElectronApp } from "update-electron-app";
+import { readConfigFile, writeConfigFile } from "./user-config/file-access";
 
 updateElectronApp();
 
@@ -36,7 +37,29 @@ const createWindow = () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", createWindow);
+app.whenReady().then(() => {
+	ipcMain.handle("read-config-file", readConfigFile);
+	ipcMain.handle("write-config-file", async (_, ...args) => {
+		if (args.length === 1) {
+			const arg = args[0];
+			if (typeof arg === "string") {
+				return writeConfigFile(arg);
+			}
+		}
+
+		throw new Error("Invalid arguments to write-config-file.");
+	});
+
+	createWindow();
+
+	app.on("activate", () => {
+		// On OS X it's common to re-create a window in the app when the
+		// dock icon is clicked and there are no other windows open.
+		if (BrowserWindow.getAllWindows().length === 0) {
+			createWindow();
+		}
+	});
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
@@ -44,14 +67,6 @@ app.on("ready", createWindow);
 app.on("window-all-closed", () => {
 	if (process.platform !== "darwin") {
 		app.quit();
-	}
-});
-
-app.on("activate", () => {
-	// On OS X it's common to re-create a window in the app when the
-	// dock icon is clicked and there are no other windows open.
-	if (BrowserWindow.getAllWindows().length === 0) {
-		createWindow();
 	}
 });
 
