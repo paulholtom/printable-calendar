@@ -12,14 +12,14 @@ export const userConfig = z.object({
 
 export type UserConfig = z.infer<typeof userConfig>;
 
-export function isUserConfig(obj: unknown): obj is UserConfig {
-	return obj && typeof obj === "object";
+export function getDefaultUserConfig(): UserConfig {
+	return { dates: [] };
 }
 
 export function parseUserConfig(unparsed: string): UserConfig {
 	try {
 		return userConfig.parse(JSON.parse(unparsed));
 	} catch {
-		return { dates: [] };
+		return getDefaultUserConfig();
 	}
 }

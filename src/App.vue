@@ -8,9 +8,13 @@
 
 <script setup lang="ts">
 import { reactive, watch } from "vue";
-import { parseUserConfig, UserConfig } from "./user-config";
+import {
+	getDefaultUserConfig,
+	parseUserConfig,
+	UserConfig,
+} from "./user-config";
 
-const configFile = reactive<UserConfig>({ dates: [] });
+const configFile = reactive<UserConfig>(getDefaultUserConfig());
 
 async function setupConfig(): Promise<void> {
 	Object.assign(
