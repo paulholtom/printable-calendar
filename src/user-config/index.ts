@@ -6,6 +6,7 @@ export const calendarDate = z.object({
 export type CalendarDate = z.infer<typeof calendarDate>;
 
 export const userConfig = z.object({
+	pdfDirectory: z.string().optional(),
 	dates: z.array(calendarDate),
 });
 

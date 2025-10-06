@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import started from "electron-squirrel-startup";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { updateElectronApp } from "update-electron-app";
 import { readConfigFile, writeConfigFile } from "./user-config/file-access";
@@ -40,14 +41,31 @@ const createWindow = () => {
 app.whenReady().then(() => {
 	ipcMain.handle("read-config-file", readConfigFile);
 	ipcMain.handle("write-config-file", async (_, ...args) => {
-		if (args.length === 1) {
-			const arg = args[0];
-			if (typeof arg === "string") {
-				return writeConfigFile(arg);
-			}
+		if (args.length !== 1 || typeof args[0] !== "string") {
+			throw new Error(
+				`Invalid arguments to write-config-file. Expected [string], got ${args.map((arg) => typeof arg)}`,
+			);
 		}
-
-		throw new Error("Invalid arguments to write-config-file.");
+		return writeConfigFile(args[0]);
+	});
+	ipcMain.handle("print-pdf", async (event, ...args) => {
+		if (args.length !== 1 || typeof args[0] !== "string") {
+			throw new Error(
+				`Invalid arguments to print-pdf. Expected [string], got ${args.map((arg) => typeof arg)}`,
+			);
+		}
+		const pdfData = await event.sender.printToPDF({ pageSize: "A2" });
+		await fs.writeFile(args[0], pdfData);
+	});
+	ipcMain.handle("select-directory", async () => {
+		const result = await dialog.showOpenDialog({
+			properties: ["openDirectory", "createDirectory"],
+		});
+		if (result.canceled) {
+			return undefined;
+		} else {
+			return result.filePaths[0];
+		}
 	});
 
 	createWindow();
