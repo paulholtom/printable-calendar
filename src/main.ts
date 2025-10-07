@@ -43,7 +43,7 @@ app.whenReady().then(() => {
 	ipcMain.handle("write-config-file", async (_, ...args) => {
 		if (args.length !== 1 || typeof args[0] !== "string") {
 			throw new Error(
-				`Invalid arguments to write-config-file. Expected [string], got ${args.map((arg) => typeof arg)}`,
+				`Invalid arguments to write-config-file. Expected [string], got [${args.map((arg) => typeof arg)}]`,
 			);
 		}
 		return writeConfigFile(args[0]);
@@ -51,7 +51,7 @@ app.whenReady().then(() => {
 	ipcMain.handle("print-pdf", async (event, ...args) => {
 		if (args.length !== 1 || typeof args[0] !== "string") {
 			throw new Error(
-				`Invalid arguments to print-pdf. Expected [string], got ${args.map((arg) => typeof arg)}`,
+				`Invalid arguments to print-pdf. Expected [string], got [${args.map((arg) => typeof arg)}]`,
 			);
 		}
 		const pdfData = await event.sender.printToPDF({ pageSize: "A2" });

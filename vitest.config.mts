@@ -12,6 +12,7 @@ export default defineConfig({
 				...configDefaults.coverage.exclude,
 				// Don't test config files.
 				"*.config.*",
+				"**/__*__/**",
 			],
 		},
 	},
