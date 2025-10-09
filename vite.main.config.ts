@@ -1,4 +1,3 @@
-import { defineConfig } from "vite";
+import { extendBaseConfig } from "./vite.config";
 
-// https://vitejs.dev/config
-export default defineConfig({});
+export default extendBaseConfig({});

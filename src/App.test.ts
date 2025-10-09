@@ -1,9 +1,15 @@
-import { fireEvent, render } from "@testing-library/vue";
+import { render } from "@testing-library/vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 import App from "./App.vue";
 import { ElectronApi } from "./electron-api";
-import { getDefaultUserConfig, UserConfig } from "./user-config";
+import {
+	getDefaultUserConfig,
+	provideUserConfig,
+	UserConfig,
+} from "./user-config";
+
+vi.mock(import("@/user-config"), { spy: true });
 
 const mockElectronApi = {
 	readUserConfigFile: vi.fn(),
@@ -23,92 +29,55 @@ afterEach(() => {
 	window.electronApi = undefined;
 });
 
-describe("select PDF directory", () => {
-	it("updates the config if the PDF directory is changed", async () => {
-		// Arrange
-		const selectedDirectory = "selected-directory";
-		mockElectronApi.selectDirectory.mockResolvedValueOnce(
-			selectedDirectory,
-		);
-		const expectedConfig: UserConfig = {
-			...getDefaultUserConfig(),
-			pdfDirectory: selectedDirectory,
-		};
-		const wrapper = render(App);
-
-		// Act
-		const selectDirectoryButton = wrapper.getByRole("button", {
-			name: "Choose PDF Directory",
-		});
-		await fireEvent.click(selectDirectoryButton);
-
-		// Assert
-		expect(mockElectronApi.writeUserConfigFile).toHaveBeenCalledWith(
-			JSON.stringify(expectedConfig),
-		);
-	});
-});
-
-describe("Print PDF", () => {
-	it("doesn't print if no folder is provided", async () => {
-		// Arrange
-		const wrapper = render(App);
-
-		// Act
-		const printPdfButton = wrapper.getByRole("button", {
-			name: "Print PDF",
-		});
-		await fireEvent.click(printPdfButton);
-
-		// Assert
-		expect(mockElectronApi.printToPdf).not.toHaveBeenCalled();
-	});
-
-	it("writes to the path from the user config if one was loaded", async () => {
+describe("configFile", () => {
+	it("parses and provides the config file", async () => {
 		// Arrange
 		const pdfDirectory = "directory-from-config";
 		const userConfig: UserConfig = {
 			...getDefaultUserConfig(),
 			pdfDirectory,
 		};
-		mockElectronApi.readUserConfigFile.mockResolvedValueOnce(
-			JSON.stringify(userConfig),
+		const { promise: filePromise, resolve: resolveFilePromise } =
+			Promise.withResolvers<string>();
+		mockElectronApi.readUserConfigFile.mockImplementationOnce(
+			() => filePromise,
 		);
-		const expectedPath = `${pdfDirectory}\\test.pdf`;
-		const wrapper = render(App);
+		resolveFilePromise(JSON.stringify(userConfig));
 
 		// Act
-		const printPdfButton = wrapper.getByRole("button", {
-			name: "Print PDF",
-		});
-		await fireEvent.click(printPdfButton);
-		await nextTick();
+		render(App);
+		// wait for the file to be parsed.
+		await filePromise;
 
 		// Assert
-		expect(mockElectronApi.printToPdf).toHaveBeenCalledWith(expectedPath);
-		expect(window.alert).toHaveBeenCalledWith(
-			`PDF file created: ${expectedPath}`,
-		);
+		expect(provideUserConfig).toHaveBeenCalledWith(userConfig);
 	});
 
-	it("prompts for a directory to be selected if there isn't already one", async () => {
+	it("saves changes made to the user config", async () => {
 		// Arrange
-		const pdfDirectory = "selected-directory";
-		mockElectronApi.selectDirectory.mockResolvedValueOnce(pdfDirectory);
-		const expectedPath = `${pdfDirectory}\\test.pdf`;
-		const wrapper = render(App);
+		const pdfDirectory = "new-pdf-directory";
+		const userConfig: UserConfig = getDefaultUserConfig();
+		const { promise: filePromise, resolve: resolveFilePromise } =
+			Promise.withResolvers<string>();
+		mockElectronApi.readUserConfigFile.mockImplementationOnce(
+			() => filePromise,
+		);
+		resolveFilePromise(JSON.stringify(userConfig));
+		render(App);
+		await filePromise;
 
 		// Act
-		const printPdfButton = wrapper.getByRole("button", {
-			name: "Print PDF",
-		});
-		await fireEvent.click(printPdfButton);
+		const providedConfig = vi.mocked(provideUserConfig).mock.calls[0][0];
+		providedConfig.pdfDirectory = pdfDirectory;
 		await nextTick();
 
 		// Assert
-		expect(mockElectronApi.printToPdf).toHaveBeenCalledWith(expectedPath);
-		expect(window.alert).toHaveBeenCalledWith(
-			`PDF file created: ${expectedPath}`,
+		const expectedConfig: UserConfig = {
+			...userConfig,
+			pdfDirectory,
+		};
+		expect(mockElectronApi.writeUserConfigFile).toHaveBeenCalledWith(
+			JSON.stringify(expectedConfig),
 		);
 	});
 });

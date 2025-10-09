@@ -1,3 +1,4 @@
+import { inject, InjectionKey, provide } from "vue";
 import { z } from "zod";
 
 export const calendarDate = z.object({
@@ -22,4 +23,25 @@ export function parseUserConfig(unparsed: string): UserConfig {
 	} catch {
 		return getDefaultUserConfig();
 	}
+}
+
+/**
+ * The injection key for the user config.
+ */
+export const USER_CONFIG_KEY: InjectionKey<UserConfig> = Symbol("user-config");
+
+/**
+ * @returns The user config.
+ */
+export function useUserConfig(): UserConfig {
+	return inject(USER_CONFIG_KEY);
+}
+
+/**
+ * Provides the user config for child components.
+ *
+ * @param config The config to be provided.
+ */
+export function provideUserConfig(config: UserConfig): void {
+	provide(USER_CONFIG_KEY, config);
 }

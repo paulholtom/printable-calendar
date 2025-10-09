@@ -1,5 +1,19 @@
-import { describe, expect, it } from "vitest";
-import { getDefaultUserConfig, parseUserConfig, UserConfig } from "./index";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { inject, provide } from "vue";
+import {
+	getDefaultUserConfig,
+	parseUserConfig,
+	provideUserConfig,
+	USER_CONFIG_KEY,
+	UserConfig,
+	useUserConfig,
+} from "./index";
+
+vi.mock("vue");
+
+beforeEach(() => {
+	vi.clearAllMocks();
+});
 
 describe(parseUserConfig, () => {
 	it("returns a parsed value for a valid string", () => {
@@ -23,5 +37,34 @@ describe(parseUserConfig, () => {
 
 		// Assert
 		expect(result).toEqual(getDefaultUserConfig());
+	});
+});
+
+describe(provideUserConfig, () => {
+	it("provides the user config", () => {
+		// Arrange
+		const config = getDefaultUserConfig();
+
+		// Act
+		provideUserConfig(config);
+
+		// Assert
+		expect(provide).toHaveBeenCalledWith(USER_CONFIG_KEY, config);
+	});
+});
+
+describe(useUserConfig, () => {
+	it("injects the user config", () => {
+		// Arrange
+		const config = getDefaultUserConfig();
+		vi.mocked(inject).mockImplementationOnce((key) =>
+			key === USER_CONFIG_KEY ? config : undefined,
+		);
+
+		// Act
+		const result = useUserConfig();
+
+		// Assert
+		expect(result).toBe(config);
 	});
 });
