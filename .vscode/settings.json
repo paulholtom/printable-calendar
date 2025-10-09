@@ -9,8 +9,9 @@
 	"explorer.fileNesting.patterns": {
 		"tsconfig.json": "tsconfig.*.json, env.d.ts",
 		"vite.main.config.ts": "vitest.config.*, vite.*.config.ts, vite.*.config.mts",
-		"package.json": "package-lock.json, pnpm*, .yarnrc*, yarn*, .eslint*, eslint*, .oxlint*, oxlint*, .prettier*, prettier*, .editorconfig",
+		"package.json": "package-lock.json, pnpm*, .yarnrc*, yarn*, .eslint*, eslint*, .oxlint*, oxlint*, .prettier*, prettier*, .editorconfig, stylelint*",
 		"*.ts": "$(capture).test.ts, $(capture).*.test.ts",
 		"*.vue": "$(capture).test.ts"
-	}
+	},
+	"stylelint.validate": ["vue", "css", "postcss"]
 }
