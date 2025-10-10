@@ -94,6 +94,9 @@ const appMenu = Menu.buildFromTemplate([
 	{
 		role: "editMenu",
 	},
+	{
+		role: "viewMenu",
+	},
 ]);
 
 Menu.setApplicationMenu(appMenu);

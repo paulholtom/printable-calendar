@@ -1,11 +1,11 @@
 <template>
 	<PrintControls />
-	<h1>Config File Contents</h1>
-	<p>{{ configFile }}</p>
+	<CalendarMonth :year="year" :month="month" />
 </template>
 
 <script setup lang="ts">
-import { reactive, watch } from "vue";
+import { reactive, ref, watch } from "vue";
+import CalendarMonth from "./components/calendar-month.vue";
 import PrintControls from "./components/print-controls.vue";
 import {
 	getDefaultUserConfig,
@@ -29,4 +29,7 @@ provideUserConfig(configFile);
 watch(configFile, (newValue) => {
 	window.electronApi.writeUserConfigFile(JSON.stringify(newValue));
 });
+
+const year = ref(new Date().getFullYear());
+const month = ref(new Date().getMonth());
 </script>
