@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, Menu } from "electron";
 import { join } from "node:path";
 import { updateElectronApp } from "update-electron-app";
 import { expect, it, vi } from "vitest";
@@ -51,4 +51,12 @@ it("loads the renderer's index file", () => {
 	expect(new BrowserWindow().loadFile).toHaveBeenCalledWith(
 		join(__dirname, "../renderer/vite-name/index.html"),
 	);
+});
+
+it("sets up the menu", () => {
+	// Arrange
+	// Act
+
+	// Assert
+	expect(Menu.setApplicationMenu).toHaveBeenCalled();
 });

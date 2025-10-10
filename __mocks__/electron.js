@@ -6,6 +6,7 @@ export const app = {
 	}),
 	on: vi.fn(),
 	quit: vi.fn(),
+	getPath: vi.fn(),
 };
 export const ipcMain = {
 	handle: vi.fn(),
@@ -25,3 +26,9 @@ export { BrowserWindow };
 export const dialog = {
 	showOpenDialog: vi.fn(),
 };
+
+const Menu = vi.fn(function () {});
+Menu.buildFromTemplate = vi.fn();
+Menu.setApplicationMenu = vi.fn();
+
+export { Menu };

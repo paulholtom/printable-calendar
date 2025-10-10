@@ -1,5 +1,5 @@
+import { app } from "electron";
 import mockFs from "mock-fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -8,7 +8,7 @@ import {
 	writeConfigFile,
 } from "./file-access";
 
-vi.mock(import("node:os"));
+vi.mock(import("electron"));
 
 const FAKE_HOME_DIRECTORY = "C:\\user-home";
 
@@ -16,7 +16,7 @@ beforeEach(() => {
 	vi.resetAllMocks();
 	mockFs.restore();
 
-	vi.mocked(homedir).mockReturnValue(FAKE_HOME_DIRECTORY);
+	vi.mocked(app.getPath).mockReturnValue(FAKE_HOME_DIRECTORY);
 });
 
 describe(readConfigFile, () => {

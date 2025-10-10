@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu } from "electron";
 import started from "electron-squirrel-startup";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -90,3 +90,10 @@ app.on("window-all-closed", () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
+const appMenu = Menu.buildFromTemplate([
+	{
+		role: "editMenu",
+	},
+]);
+
+Menu.setApplicationMenu(appMenu);

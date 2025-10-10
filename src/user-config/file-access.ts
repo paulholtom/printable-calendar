@@ -1,11 +1,11 @@
+import { app } from "electron";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 
-export const CONFIG_FILE_NAME = "printable-calendar-config.json";
+export const CONFIG_FILE_NAME = "user-config.json";
 
 function getConfigFileFullPath(): string {
-	return path.join(os.homedir(), CONFIG_FILE_NAME);
+	return path.join(app.getPath("userData"), CONFIG_FILE_NAME);
 }
 
 export function readConfigFile(): Promise<string> {
