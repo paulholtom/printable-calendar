@@ -29,11 +29,3 @@ async function choosePdfDirectory(): Promise<void> {
 		(await window.electronApi.selectDirectory()) ?? configFile.pdfDirectory;
 }
 </script>
-
-<style lang="css" scoped>
-@media print {
-	.print-controls {
-		display: none;
-	}
-}
-</style>

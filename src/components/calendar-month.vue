@@ -69,6 +69,20 @@ for (let i = 0; i < 7; i++) {
 </script>
 
 <style lang="css" scoped>
+.calendar-month {
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	break-before: always;
+	height: 100%;
+
+	@media print {
+		height: 100vh;
+	}
+}
+
 .month-name {
 	text-align: center;
 	font: 600 2em / 2.5em sans-serif;
@@ -80,13 +94,15 @@ for (let i = 0; i < 7; i++) {
 }
 
 .days {
+	flex-grow: 1;
 	display: grid;
 	grid-template-columns: repeat(7, 1fr);
 	grid-template-rows: max-content;
 	grid-auto-rows: 1fr;
 	box-sizing: border-box;
 	gap: 1px;
-	height: 100vh;
+	margin: 0;
+	padding: 0;
 
 	li {
 		display: block;

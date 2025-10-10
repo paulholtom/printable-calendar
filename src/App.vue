@@ -1,6 +1,12 @@
 <template>
-	<PrintControls />
-	<CalendarMonth :year="year" :month="month" />
+	<div class="app">
+		<nav class="controls">
+			<PrintControls />
+		</nav>
+		<main class="calendar-display">
+			<CalendarMonth :year="year" :month="month" />
+		</main>
+	</div>
 </template>
 
 <script setup lang="ts">
@@ -33,3 +39,31 @@ watch(configFile, (newValue) => {
 const year = ref(new Date().getFullYear());
 const month = ref(new Date().getMonth());
 </script>
+
+<style lang="css" scoped>
+.app {
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	margin: 0;
+	padding: 2px;
+	box-sizing: border-box;
+}
+
+.calendar-display {
+	flex-grow: 1;
+	margin: 0;
+	padding: 0;
+}
+
+@media print {
+	.app {
+		height: unset;
+		padding: 0 1px;
+	}
+
+	.controls {
+		display: none;
+	}
+}
+</style>

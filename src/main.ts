@@ -54,7 +54,10 @@ app.whenReady().then(() => {
 				`Invalid arguments to print-pdf. Expected [string], got [${args.map((arg) => typeof arg)}]`,
 			);
 		}
-		const pdfData = await event.sender.printToPDF({ pageSize: "A2" });
+		const pdfData = await event.sender.printToPDF({
+			pageSize: "A2",
+			margins: { top: 0, left: 0, right: 0, bottom: 0 },
+		});
 		await fs.writeFile(args[0], pdfData);
 	});
 	ipcMain.handle("select-directory", async () => {
