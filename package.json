@@ -1,7 +1,7 @@
 {
 	"name": "printable-calendar",
 	"productName": "printable-calendar",
-	"version": "0.5.0",
+	"version": "0.6.0",
 	"description": "A printable calendar",
 	"main": ".vite/build/main.js",
 	"scripts": {
