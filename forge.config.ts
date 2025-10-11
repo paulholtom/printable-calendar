@@ -7,6 +7,7 @@ import { VitePlugin } from "@electron-forge/plugin-vite";
 import { PublisherGitHubConfig } from "@electron-forge/publisher-github";
 import type { ForgeConfig } from "@electron-forge/shared-types";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
+import path from "node:path";
 
 const gitHubPublisherConfig: PublisherGitHubConfig = {
 	repository: {
@@ -20,10 +21,15 @@ const gitHubPublisherConfig: PublisherGitHubConfig = {
 const config: ForgeConfig = {
 	packagerConfig: {
 		asar: true,
+		icon: path.resolve(__dirname, "src/assets/calendar.ico"),
 	},
 	rebuildConfig: {},
 	makers: [
-		new MakerSquirrel({}),
+		new MakerSquirrel({
+			setupIcon: path.resolve(__dirname, "src/assets/calendar.ico"),
+			iconUrl:
+				"https://raw.githubusercontent.com/paulholtom/printable-calendar/refs/heads/main/src/assets/calendar.ico",
+		}),
 		new MakerZIP({}, ["darwin"]),
 		new MakerRpm({}),
 		new MakerDeb({}),

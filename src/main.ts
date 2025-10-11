@@ -1,8 +1,16 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu } from "electron";
+import {
+	app,
+	BrowserWindow,
+	dialog,
+	ipcMain,
+	Menu,
+	nativeImage,
+} from "electron";
 import started from "electron-squirrel-startup";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { updateElectronApp } from "update-electron-app";
+import iconPath from "./assets/calendar.png";
 import { readConfigFile, writeConfigFile } from "./user-config/file-access";
 
 updateElectronApp();
@@ -14,12 +22,14 @@ if (started) {
 
 const createWindow = () => {
 	// Create the browser window.
+	const icon = nativeImage.createFromDataURL(iconPath);
 	const mainWindow = new BrowserWindow({
 		width: 800,
 		height: 600,
 		webPreferences: {
 			preload: path.join(__dirname, "preload.js"),
 		},
+		icon,
 	});
 
 	// and load the index.html of the app.

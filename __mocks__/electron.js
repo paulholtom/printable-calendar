@@ -32,3 +32,7 @@ Menu.buildFromTemplate = vi.fn();
 Menu.setApplicationMenu = vi.fn();
 
 export { Menu };
+
+export const nativeImage = {
+	createFromDataURL: vi.fn(),
+};
