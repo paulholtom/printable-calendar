@@ -29,6 +29,17 @@ afterEach(() => {
 	window.electronApi = undefined;
 });
 
+function createUserConfigPromise(userConfig: UserConfig): Promise<string> {
+	const { promise: filePromise, resolve: resolveFilePromise } =
+		Promise.withResolvers<string>();
+	mockElectronApi.readUserConfigFile.mockImplementationOnce(
+		() => filePromise,
+	);
+	resolveFilePromise(JSON.stringify(userConfig));
+
+	return filePromise;
+}
+
 describe("configFile", () => {
 	it("parses and provides the config file", async () => {
 		// Arrange
@@ -37,12 +48,7 @@ describe("configFile", () => {
 			...getDefaultUserConfig(),
 			pdfDirectory,
 		};
-		const { promise: filePromise, resolve: resolveFilePromise } =
-			Promise.withResolvers<string>();
-		mockElectronApi.readUserConfigFile.mockImplementationOnce(
-			() => filePromise,
-		);
-		resolveFilePromise(JSON.stringify(userConfig));
+		const filePromise = createUserConfigPromise(userConfig);
 
 		// Act
 		render(App);
@@ -57,12 +63,7 @@ describe("configFile", () => {
 		// Arrange
 		const pdfDirectory = "new-pdf-directory";
 		const userConfig: UserConfig = getDefaultUserConfig();
-		const { promise: filePromise, resolve: resolveFilePromise } =
-			Promise.withResolvers<string>();
-		mockElectronApi.readUserConfigFile.mockImplementationOnce(
-			() => filePromise,
-		);
-		resolveFilePromise(JSON.stringify(userConfig));
+		const filePromise = createUserConfigPromise(userConfig);
 		render(App);
 		await filePromise;
 
@@ -79,5 +80,37 @@ describe("configFile", () => {
 		expect(mockElectronApi.writeUserConfigFile).toHaveBeenCalledWith(
 			JSON.stringify(expectedConfig),
 		);
+	});
+});
+
+describe("calendar display", () => {
+	it("displays a single month if one is specified in the user config", async () => {
+		// Arrange
+		const userConfig: UserConfig = getDefaultUserConfig();
+		userConfig.displayDate.month = 0;
+		const filePromise = createUserConfigPromise(userConfig);
+
+		// Act
+		const wrapper = render(App);
+		// wait for the file to be parsed.
+		await filePromise;
+
+		// Assert
+		expect(wrapper.getAllByRole("grid").length).toBe(1);
+	});
+
+	it("displays an entire year if no month is specified", async () => {
+		// Arrange
+		const userConfig: UserConfig = getDefaultUserConfig();
+		userConfig.displayDate.month = undefined;
+		const filePromise = createUserConfigPromise(userConfig);
+
+		// Act
+		const wrapper = render(App);
+		// wait for the file to be parsed.
+		await filePromise;
+
+		// Assert
+		expect(wrapper.getAllByRole("grid").length).toBe(12);
 	});
 });

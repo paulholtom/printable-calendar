@@ -1,5 +1,5 @@
 <template>
-	<section class="calendar-month">
+	<section class="calendar-month" role="grid">
 		<header class="month-name">
 			{{
 				firstOfMonth.toLocaleDateString(undefined, {

@@ -2,16 +2,24 @@
 	<div class="app">
 		<nav class="controls">
 			<PrintControls />
+			<NavigationControls />
 		</nav>
 		<main class="calendar-display">
-			<CalendarMonth :year="year" :month="month" />
+			<CalendarMonth
+				v-if="configFile.displayDate.month !== undefined"
+				:year="configFile.displayDate.year"
+				:month="configFile.displayDate.month"
+			/>
+			<CalendarYear v-else :year="configFile.displayDate.year" />
 		</main>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from "vue";
+import { reactive, watch } from "vue";
 import CalendarMonth from "./components/calendar-month.vue";
+import CalendarYear from "./components/calendar-year.vue";
+import NavigationControls from "./components/navigation-controls.vue";
 import PrintControls from "./components/print-controls.vue";
 import {
 	getDefaultUserConfig,
@@ -35,9 +43,6 @@ provideUserConfig(configFile);
 watch(configFile, (newValue) => {
 	window.electronApi.writeUserConfigFile(JSON.stringify(newValue));
 });
-
-const year = ref(new Date().getFullYear());
-const month = ref(new Date().getMonth());
 </script>
 
 <style lang="css" scoped>

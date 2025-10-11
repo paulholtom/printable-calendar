@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { inject, provide } from "vue";
 import {
 	getDefaultUserConfig,
@@ -13,6 +13,29 @@ vi.mock("vue");
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	vi.useFakeTimers();
+});
+
+afterEach(() => {
+	vi.useRealTimers();
+});
+
+describe(getDefaultUserConfig, () => {
+	it("defaults the display date to the current month and year", () => {
+		// Arrange
+		const expectedMonth = 5;
+		const expectedYear = 2023;
+		vi.setSystemTime(new Date(expectedYear, expectedMonth));
+
+		// Act
+		const result = getDefaultUserConfig();
+
+		// Assert
+		expect(result.displayDate).toEqual({
+			month: expectedMonth,
+			year: expectedYear,
+		});
+	});
 });
 
 describe(parseUserConfig, () => {

@@ -1,20 +1,24 @@
 import { inject, InjectionKey, provide } from "vue";
 import { z } from "zod";
 
-export const calendarDate = z.object({
-	description: z.string(),
-});
-export type CalendarDate = z.infer<typeof calendarDate>;
-
 export const userConfig = z.object({
 	pdfDirectory: z.string().optional(),
-	dates: z.array(calendarDate),
+	displayDate: z.object({
+		month: z.number().optional(),
+		year: z.number(),
+	}),
 });
 
 export type UserConfig = z.infer<typeof userConfig>;
 
 export function getDefaultUserConfig(): UserConfig {
-	return { dates: [] };
+	const currentDate = new Date();
+	return {
+		displayDate: {
+			month: currentDate.getMonth(),
+			year: currentDate.getFullYear(),
+		},
+	};
 }
 
 export function parseUserConfig(unparsed: string): UserConfig {
