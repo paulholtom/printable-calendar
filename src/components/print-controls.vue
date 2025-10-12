@@ -8,6 +8,7 @@
 </template>
 
 <script setup lang="ts">
+import { getDateDisplayValue } from "@/dates";
 import { useUserConfig } from "@/user-config";
 
 const configFile = useUserConfig();
@@ -19,9 +20,9 @@ async function printPdf(): Promise<void> {
 	if (!configFile.pdfDirectory) {
 		return;
 	}
-	const filename = `${configFile.pdfDirectory}\\test.pdf`;
-	await window.electronApi.printToPdf(filename);
-	alert(`PDF file created: ${filename}`);
+	const filename = `${configFile.pdfDirectory}\\${getDateDisplayValue(configFile.displayDate)}.pdf`;
+	const finalFileName = await window.electronApi.printToPdf(filename);
+	alert(`PDF file created: ${finalFileName}`);
 }
 
 async function choosePdfDirectory(): Promise<void> {

@@ -15,10 +15,10 @@ export interface ElectronApi {
 	/**
 	 * Create a PDF of the current page.
 	 *
-	 * @param fileNameAndPath The full path of the file to be created.
-	 * @returns A promise that resolves once the PDF has been created.
+	 * @param fileNameAndPath The full path of the file to be created. Numbers will be appended if this file already exists.
+	 * @returns A promise that resolves to the path of the created PDF file.
 	 */
-	printToPdf(fileNameAndPath: string): Promise<void>;
+	printToPdf(fileNameAndPath: string): Promise<string>;
 	/**
 	 * Select a directory on the user's computer.
 	 *

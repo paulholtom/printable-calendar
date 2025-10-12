@@ -1,3 +1,4 @@
+import { getDateDisplayValue } from "@/dates";
 import { ElectronApi } from "@/electron-api";
 import {
 	getDefaultUserConfig,
@@ -73,8 +74,13 @@ describe("Print PDF", () => {
 		const userConfig: UserConfig = {
 			...getDefaultUserConfig(),
 			pdfDirectory,
+			displayDate: {
+				month: 4,
+				year: 2010,
+			},
 		};
-		const expectedPath = `${pdfDirectory}\\test.pdf`;
+		mockElectronApi.printToPdf.mockImplementation((path) => path);
+		const expectedPath = `${pdfDirectory}\\${getDateDisplayValue(userConfig.displayDate)}.pdf`;
 		const wrapper = render(PrintControls, {
 			global: { provide: { [USER_CONFIG_KEY]: userConfig } },
 		});
@@ -96,11 +102,13 @@ describe("Print PDF", () => {
 	it("prompts for a directory to be selected if there isn't already one", async () => {
 		// Arrange
 		const pdfDirectory = "selected-directory";
+		const userConfig = getDefaultUserConfig();
 		mockElectronApi.selectDirectory.mockResolvedValueOnce(pdfDirectory);
-		const expectedPath = `${pdfDirectory}\\test.pdf`;
+		const expectedPath = `${pdfDirectory}\\${getDateDisplayValue(userConfig.displayDate)}.pdf`;
 		const wrapper = render(PrintControls, {
-			global: { provide: { [USER_CONFIG_KEY]: getDefaultUserConfig() } },
+			global: { provide: { [USER_CONFIG_KEY]: userConfig } },
 		});
+		mockElectronApi.printToPdf.mockImplementation((path) => path);
 
 		// Act
 		const printPdfButton = wrapper.getByRole("button", {

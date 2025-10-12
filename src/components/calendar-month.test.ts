@@ -1,3 +1,4 @@
+import { getDateDisplayValue } from "@/dates";
 import { render } from "@testing-library/vue";
 import { it } from "vitest";
 import CalendarMonth from "./calendar-month.vue";
@@ -8,13 +9,8 @@ it("displays the provided month", () => {
 	const year = 2025;
 
 	// Act
-	const wrapper = render(CalendarMonth, { props: { month, year } });
+	const wrapper = render(CalendarMonth, { props: { year, month } });
 
 	// Assert
-	wrapper.getByText(
-		new Date(year, month).toLocaleDateString(undefined, {
-			year: "numeric",
-			month: "long",
-		}),
-	);
+	wrapper.getByText(getDateDisplayValue({ year, month }));
 });

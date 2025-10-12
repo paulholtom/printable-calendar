@@ -1,12 +1,7 @@
 <template>
 	<section class="calendar-month" role="grid">
 		<header class="month-name">
-			{{
-				firstOfMonth.toLocaleDateString(undefined, {
-					year: "numeric",
-					month: "long",
-				})
-			}}
+			{{ getDateDisplayValue({ year, month }) }}
 		</header>
 		<ol class="days">
 			<li
@@ -38,6 +33,7 @@
 </template>
 
 <script setup lang="ts">
+import { getDateDisplayValue } from "@/dates";
 import { computed } from "vue";
 
 const props = defineProps<{

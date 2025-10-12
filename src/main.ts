@@ -7,7 +7,8 @@ import {
 	nativeImage,
 } from "electron";
 import started from "electron-squirrel-startup";
-import fs from "node:fs/promises";
+import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import path from "node:path";
 import { updateElectronApp } from "update-electron-app";
 import iconPath from "./assets/calendar.png";
@@ -64,11 +65,30 @@ app.whenReady().then(() => {
 				`Invalid arguments to print-pdf. Expected [string], got [${args.map((arg) => typeof arg)}]`,
 			);
 		}
+
+		function buildFilePath(
+			splitPath: path.ParsedPath,
+			uniqueId: number,
+		): string {
+			return path.join(
+				splitPath.dir,
+				`${splitPath.name}${uniqueId ? ` (${uniqueId})` : ""}${splitPath.ext}`,
+			);
+		}
+
+		const splitPath = path.parse(args[0]);
+		let uniqueId = 0;
+		let filePath = buildFilePath(splitPath, uniqueId);
+		while (fs.existsSync(filePath)) {
+			++uniqueId;
+			filePath = buildFilePath(splitPath, uniqueId);
+		}
 		const pdfData = await event.sender.printToPDF({
 			pageSize: "A2",
 			margins: { top: 0, left: 0, right: 0, bottom: 0 },
 		});
-		await fs.writeFile(args[0], pdfData);
+		await fsPromises.writeFile(filePath, pdfData);
+		return filePath;
 	});
 	ipcMain.handle("select-directory", async () => {
 		const result = await dialog.showOpenDialog({

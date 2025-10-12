@@ -1,4 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
+import mockFs from "mock-fs";
 import { writeFile } from "node:fs/promises";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import "./main";
@@ -17,6 +18,8 @@ vi.mock(import("node:fs/promises"));
 
 beforeEach(() => {
 	vi.resetAllMocks();
+
+	mockFs.restore();
 });
 
 function getCallback(
@@ -158,7 +161,7 @@ describe("ipcMain handle write-config-file", () => {
 describe("ipcMain handle print-pdf", () => {
 	const printPdfCallback = getCallback("print-pdf", ipcMain.handle);
 
-	it("creates a pdf", async () => {
+	it("creates a pdf at the specified path if one doesn't already exist", async () => {
 		// Arrange
 		const filePath = "file-path";
 		const contents = "some-content";
@@ -171,6 +174,46 @@ describe("ipcMain handle print-pdf", () => {
 
 		// Assert
 		expect(writeFile).toHaveBeenCalledWith(filePath, contents);
+	});
+
+	it("appends a number to the file name if that file already exists and has no extension", async () => {
+		// Arrange
+		const filePath = "file-path";
+		const contents = "some-content";
+		mockFs({
+			[filePath]: "anything",
+		});
+
+		// Act
+		await printPdfCallback(
+			{ sender: { printToPDF: () => contents } },
+			filePath,
+		);
+
+		// Assert
+		expect(writeFile).toHaveBeenCalledWith(`${filePath} (1)`, contents);
+	});
+
+	it("appends a number to the file name if that file already exists and has an extension", async () => {
+		// Arrange
+		const fileName = "file-name";
+		const extension = "pdf";
+		const contents = "some-content";
+		mockFs({
+			[`${fileName}.${extension}`]: "anything",
+		});
+
+		// Act
+		await printPdfCallback(
+			{ sender: { printToPDF: () => contents } },
+			`${fileName}.${extension}`,
+		);
+
+		// Assert
+		expect(writeFile).toHaveBeenCalledWith(
+			`${fileName} (1).${extension}`,
+			contents,
+		);
 	});
 
 	it("throws an error if there are no arguments", async () => {
