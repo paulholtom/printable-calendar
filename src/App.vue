@@ -3,6 +3,7 @@
 		<nav class="controls">
 			<PrintControls />
 			<NavigationControls />
+			<EventControls />
 		</nav>
 		<main class="calendar-display">
 			<CalendarMonth
@@ -25,6 +26,7 @@ import {
 } from "./calendar-events";
 import CalendarMonth from "./components/calendar-month.vue";
 import CalendarYear from "./components/calendar-year.vue";
+import EventControls from "./components/event-controls.vue";
 import NavigationControls from "./components/navigation-controls.vue";
 import PrintControls from "./components/print-controls.vue";
 import {

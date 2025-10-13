@@ -3,9 +3,19 @@ import { z } from "zod";
 
 const calendarEvent = z.object({
 	/**
-	 * The start date and time of the event.
+	 * The year of the first occurance of this event.
 	 */
-	start: z.coerce.date(),
+	year: z.number(),
+	/**
+	 * The month of the first occurance of this event.
+	 *
+	 * January is 0.
+	 */
+	month: z.number(),
+	/**
+	 * The day of the month of the first occurance of this event.
+	 */
+	day: z.number(),
 	/**
 	 * The description of the event.
 	 */
@@ -21,8 +31,11 @@ export type CalendarEvent = z.infer<typeof calendarEvent>;
  * @returns An event with defaults for all required values.
  */
 export function getDefaultCalendarEvent(): CalendarEvent {
+	const now = new Date();
 	return {
-		start: new Date(),
+		year: now.getFullYear(),
+		month: now.getMonth(),
+		day: now.getDate(),
 		description: "Unnamed Event",
 	};
 }
