@@ -12,6 +12,10 @@ import fsPromises from "node:fs/promises";
 import path from "node:path";
 import { updateElectronApp } from "update-electron-app";
 import iconPath from "./assets/calendar.png";
+import {
+	readCalendarEventsFile,
+	writeCalendarEventsFile,
+} from "./calendar-events/file-access";
 import { readConfigFile, writeConfigFile } from "./user-config/file-access";
 
 updateElectronApp();
@@ -58,6 +62,15 @@ app.whenReady().then(() => {
 			);
 		}
 		return writeConfigFile(args[0]);
+	});
+	ipcMain.handle("read-calendar-events-file", readCalendarEventsFile);
+	ipcMain.handle("write-calendar-events-file", async (_, ...args) => {
+		if (args.length !== 1 || typeof args[0] !== "string") {
+			throw new Error(
+				`Invalid arguments to write-calendar-events-file. Expected [string], got [${args.map((arg) => typeof arg)}]`,
+			);
+		}
+		return writeCalendarEventsFile(args[0]);
 	});
 	ipcMain.handle("print-pdf", async (event, ...args) => {
 		if (args.length !== 1 || typeof args[0] !== "string") {

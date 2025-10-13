@@ -1,3 +1,4 @@
+import { inject, InjectionKey, provide } from "vue";
 import { z } from "zod";
 
 const calendarEvent = z.object({
@@ -34,6 +35,18 @@ const calendarEvents = z.array(calendarEvent);
 export type CalendarEvents = z.infer<typeof calendarEvents>;
 
 /**
+ * A collection of differently grouped events.
+ */
+export type CalendarEventCollection = { default: CalendarEvents };
+
+/**
+ * @returns A default calendar event collection.
+ */
+export function getDefaultCalendarEventCollection(): CalendarEventCollection {
+	return { default: [] };
+}
+
+/**
  * @param unparsed The raw JSON string to parse.
  * @returns The parsed calender events.
  */
@@ -43,4 +56,28 @@ export function parseCalendarEvents(unparsed: string): CalendarEvents {
 	} catch {
 		return [];
 	}
+}
+
+/**
+ * The injection key for the calendar events.
+ */
+export const CALENDAR_EVENT_COLLECTION_KEY: InjectionKey<CalendarEventCollection> =
+	Symbol("calendar-event-collection");
+
+/**
+ * @returns The calendar events.
+ */
+export function useCalendarEventCollection(): CalendarEventCollection {
+	return inject(CALENDAR_EVENT_COLLECTION_KEY);
+}
+
+/**
+ * Provides the calendar events.
+ *
+ * @param calendarEventCollection The calendar events to be provided.
+ */
+export function provideCalendarEventCollection(
+	calendarEventCollection: CalendarEventCollection,
+): void {
+	provide(CALENDAR_EVENT_COLLECTION_KEY, calendarEventCollection);
 }

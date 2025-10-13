@@ -1,3 +1,11 @@
+import {
+	CalendarEvent,
+	CalendarEventCollection,
+	CalendarEvents,
+	getDefaultCalendarEvent,
+	getDefaultCalendarEventCollection,
+	provideCalendarEventCollection,
+} from "@/calendar-events";
 import { render } from "@testing-library/vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
@@ -10,10 +18,13 @@ import {
 } from "./user-config";
 
 vi.mock(import("@/user-config"), { spy: true });
+vi.mock(import("@/calendar-events"), { spy: true });
 
 const mockElectronApi = {
 	readUserConfigFile: vi.fn(),
 	writeUserConfigFile: vi.fn(),
+	readCalendarEventsFile: vi.fn(),
+	writeCalendarEventsFile: vi.fn(),
 	printToPdf: vi.fn(),
 	selectDirectory: vi.fn(),
 } satisfies ElectronApi;
@@ -79,6 +90,63 @@ describe("configFile", () => {
 		};
 		expect(mockElectronApi.writeUserConfigFile).toHaveBeenCalledWith(
 			JSON.stringify(expectedConfig),
+		);
+	});
+});
+
+describe("calendarEventsFile", () => {
+	function createCalendarEventsPromise(
+		calendarEvents: CalendarEvents,
+	): Promise<string> {
+		const { promise: filePromise, resolve: resolveFilePromise } =
+			Promise.withResolvers<string>();
+		mockElectronApi.readCalendarEventsFile.mockImplementationOnce(
+			() => filePromise,
+		);
+		resolveFilePromise(JSON.stringify(calendarEvents));
+
+		return filePromise;
+	}
+
+	it("parses and provides the calendar event collection", async () => {
+		// Arrange
+		const calendarEvents: CalendarEvents = [getDefaultCalendarEvent()];
+		const filePromise = createCalendarEventsPromise(calendarEvents);
+
+		// Act
+		render(App);
+		// wait for the file to be parsed.
+		await filePromise;
+
+		// Assert
+
+		const expectedCollection: CalendarEventCollection = {
+			...getDefaultCalendarEventCollection(),
+			default: calendarEvents,
+		};
+		expect(provideCalendarEventCollection).toHaveBeenCalledWith(
+			expectedCollection,
+		);
+	});
+
+	it("saves changes made to the calendar events", async () => {
+		// Arrange
+		const newEvent: CalendarEvent = getDefaultCalendarEvent();
+		const calendarEvents: CalendarEvents = [];
+		const filePromise = createCalendarEventsPromise(calendarEvents);
+		render(App);
+		await filePromise;
+
+		// Act
+		const providedConfig = vi.mocked(provideCalendarEventCollection).mock
+			.calls[0][0];
+		providedConfig.default.push(newEvent);
+		await nextTick();
+
+		// Assert
+		const expectedEvents: CalendarEvents = [newEvent];
+		expect(mockElectronApi.writeCalendarEventsFile).toHaveBeenCalledWith(
+			JSON.stringify(expectedEvents),
 		);
 	});
 });

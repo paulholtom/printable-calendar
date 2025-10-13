@@ -2,6 +2,10 @@ import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import mockFs from "mock-fs";
 import { writeFile } from "node:fs/promises";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	readCalendarEventsFile,
+	writeCalendarEventsFile,
+} from "./calendar-events/file-access";
 import "./main";
 import { readConfigFile, writeConfigFile } from "./user-config/file-access";
 
@@ -14,6 +18,7 @@ vi.mock(import("electron"));
 vi.mock(import("update-electron-app"));
 vi.mock(import("electron-squirrel-startup"), () => ({ default: false }));
 vi.mock(import("./user-config/file-access"));
+vi.mock(import("./calendar-events/file-access"));
 vi.mock(import("node:fs/promises"));
 
 beforeEach(() => {
@@ -154,6 +159,75 @@ describe("ipcMain handle write-config-file", () => {
 		// Assert
 		await expect(act).rejects.toThrowError(
 			"Invalid arguments to write-config-file. Expected [string], got [string,string]",
+		);
+	});
+});
+
+describe("ipcMain handle read-calendar-events-file", () => {
+	const readCalendarEventsFileCallback = getCallback(
+		"read-calendar-events-file",
+		ipcMain.handle,
+	);
+
+	it("calls the readCalendarEventsFile function", () => {
+		// Arrange
+
+		// Act
+		readCalendarEventsFileCallback();
+
+		// Assert
+		expect(readCalendarEventsFile).toHaveBeenCalled();
+	});
+});
+
+describe("ipcMain handle write-calendar-events-file", () => {
+	const writeCalendarEventsFileCallback = getCallback(
+		"write-calendar-events-file",
+		ipcMain.handle,
+	);
+
+	it("calls the writeCalendarEventsFIle function", async () => {
+		// Arrange
+		const contents = "some-content";
+
+		// Act
+		await writeCalendarEventsFileCallback({}, contents);
+
+		// Assert
+		expect(writeCalendarEventsFile).toHaveBeenCalledWith(contents);
+	});
+
+	it("throws an error if there are no arguments", async () => {
+		// Arrange
+		// Act
+		const act = async () => await writeCalendarEventsFileCallback({});
+
+		// Assert
+		await expect(act).rejects.toThrowError(
+			"Invalid arguments to write-calendar-events-file. Expected [string], got []",
+		);
+	});
+
+	it("throws an error if the argument is the wrong type", async () => {
+		// Arrange
+		// Act
+		const act = async () => await writeCalendarEventsFileCallback({}, 5);
+
+		// Assert
+		await expect(act).rejects.toThrowError(
+			"Invalid arguments to write-calendar-events-file. Expected [string], got [number]",
+		);
+	});
+
+	it("throws an error if there are extra arguments", async () => {
+		// Arrange
+		// Act
+		const act = async () =>
+			await writeCalendarEventsFileCallback({}, "test", "test");
+
+		// Assert
+		await expect(act).rejects.toThrowError(
+			"Invalid arguments to write-calendar-events-file. Expected [string], got [string,string]",
 		);
 	});
 });

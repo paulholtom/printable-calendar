@@ -17,6 +17,12 @@
 
 <script setup lang="ts">
 import { reactive, watch } from "vue";
+import {
+	CalendarEventCollection,
+	getDefaultCalendarEventCollection,
+	parseCalendarEvents,
+	provideCalendarEventCollection,
+} from "./calendar-events";
 import CalendarMonth from "./components/calendar-month.vue";
 import CalendarYear from "./components/calendar-year.vue";
 import NavigationControls from "./components/navigation-controls.vue";
@@ -29,7 +35,6 @@ import {
 } from "./user-config";
 
 const configFile = reactive<UserConfig>(getDefaultUserConfig());
-
 async function setupConfig(): Promise<void> {
 	Object.assign(
 		configFile,
@@ -37,11 +42,25 @@ async function setupConfig(): Promise<void> {
 	);
 }
 setupConfig();
-
 provideUserConfig(configFile);
-
 watch(configFile, (newValue) => {
 	window.electronApi.writeUserConfigFile(JSON.stringify(newValue));
+});
+
+const calendarEventCollection = reactive<CalendarEventCollection>(
+	getDefaultCalendarEventCollection(),
+);
+async function setupCalendarEventCollection(): Promise<void> {
+	calendarEventCollection.default = parseCalendarEvents(
+		await window.electronApi.readCalendarEventsFile(),
+	);
+}
+setupCalendarEventCollection();
+provideCalendarEventCollection(calendarEventCollection);
+watch(calendarEventCollection, (newValue) => {
+	window.electronApi.writeCalendarEventsFile(
+		JSON.stringify(newValue.default),
+	);
 });
 </script>
 

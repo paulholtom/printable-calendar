@@ -13,6 +13,19 @@ export interface ElectronApi {
 	 */
 	writeUserConfigFile(contents: string): Promise<void>;
 	/**
+	 * Write to the calendar event collection file.
+	 *
+	 * @param contents The contents of the file to be written.
+	 * @returns A promise that resolves when the file is successfully written.
+	 */
+	writeCalendarEventsFile(contents: string): Promise<void>;
+	/**
+	 * Reads the calendar event collection file.
+	 *
+	 * @returns A promise that resolves to the contents of the file or an empty string if the file couldn't be read.
+	 */
+	readCalendarEventsFile(): Promise<string>;
+	/**
 	 * Create a PDF of the current page.
 	 *
 	 * @param fileNameAndPath The full path of the file to be created. Numbers will be appended if this file already exists.
