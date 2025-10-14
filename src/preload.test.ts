@@ -47,18 +47,50 @@ describe("readUserConfigFile", () => {
 });
 
 describe("writeUserConfigFile", () => {
-	it("invokes read-config-file", async () => {
+	it("invokes write-config-file", async () => {
 		// Arrange
-		const filename = "some-file";
+		const contents = "some-file";
 		const electronApi = getElectronApi();
 
 		// Act
-		await electronApi.writeUserConfigFile(filename);
+		await electronApi.writeUserConfigFile(contents);
 
 		// Assert
 		expect(ipcRenderer.invoke).toHaveBeenCalledWith(
 			"write-config-file",
-			filename,
+			contents,
+		);
+	});
+});
+
+describe("readCalendarEventsFile", () => {
+	it("read-calendar-events-file", async () => {
+		// Arrange
+		const electronApi = getElectronApi();
+
+		// Act
+		await electronApi.readCalendarEventsFile();
+
+		// Assert
+		expect(ipcRenderer.invoke).toHaveBeenCalledWith(
+			"read-calendar-events-file",
+		);
+	});
+});
+
+describe("writeCalendarEventsFile", () => {
+	it("invokes write-calendar-events-file", async () => {
+		// Arrange
+		const contents = "some-file";
+		const electronApi = getElectronApi();
+
+		// Act
+		await electronApi.writeCalendarEventsFile(contents);
+
+		// Assert
+		expect(ipcRenderer.invoke).toHaveBeenCalledWith(
+			"write-calendar-events-file",
+			contents,
 		);
 	});
 });

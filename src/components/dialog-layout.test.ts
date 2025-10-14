@@ -31,7 +31,7 @@ it("displays if set to be open", () => {
 	wrapper.getByRole("dialog");
 });
 
-it("displays slot content", () => {
+it("displays default slot content", () => {
 	// Arrange
 	const slotContent = "Stuff";
 
@@ -57,6 +57,20 @@ it("displays the title", () => {
 
 	// Assert
 	wrapper.getByText(title);
+});
+
+it("displays the footer slot content", () => {
+	// Arrange
+	const slotContent = "Stuff";
+
+	// Act
+	const wrapper = render(DialogLayout, {
+		slots: { footer: slotContent },
+		props: { title: "The Title", isOpen: true },
+	});
+
+	// Assert
+	wrapper.getByText(slotContent);
 });
 
 it("toggles visiblity reactively", async () => {

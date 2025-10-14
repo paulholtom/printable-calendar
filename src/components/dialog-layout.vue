@@ -3,11 +3,18 @@
 		<div class="dialog-wrapper">
 			<header class="dialog-header">
 				{{ title }}
-				<button class="close-button" @click="close()">Close</button>
+				<button
+					class="close-button"
+					@click="close()"
+					aria-label="Close"
+				/>
 			</header>
 			<main class="dialog-content">
 				<slot />
 			</main>
+			<footer class="dialog-footer" v-if="$slots.footer">
+				<slot name="footer" />
+			</footer>
 		</div>
 	</section>
 </template>
@@ -56,27 +63,30 @@ function close() {
 
 .dialog-header {
 	border-bottom: 1px solid #ccc;
-	background: lightblue;
+	background: #708090;
 	position: relative;
-	padding-right: 35px;
-	height: 30px;
-	box-sizing: border-box;
+	padding-right: 0;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
 
 	.close-button {
-		width: 30px;
-		height: 30px;
-		position: absolute;
-		right: 0;
-		top: 0;
-		color: transparent;
-		padding: 3px;
-		overflow: hidden;
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: #555;
+		margin-left: 5px;
+		padding: 0 5px;
+		align-self: start;
+
+		&:hover {
+			color: #000;
+		}
 
 		&::before {
-			color: #000;
 			content: "\00d7";
-			font-size: 25px;
-			line-height: 30px;
+			font-size: 16px;
+			line-height: 0;
 		}
 	}
 }

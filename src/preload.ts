@@ -10,6 +10,12 @@ const electronApi: ElectronApi = {
 	writeUserConfigFile(contents) {
 		return ipcRenderer.invoke("write-config-file", contents);
 	},
+	readCalendarEventsFile() {
+		return ipcRenderer.invoke("read-calendar-events-file");
+	},
+	writeCalendarEventsFile(contents) {
+		return ipcRenderer.invoke("write-calendar-events-file", contents);
+	},
 	printToPdf(fileNameAndPath) {
 		return ipcRenderer.invoke("print-pdf", fileNameAndPath);
 	},
