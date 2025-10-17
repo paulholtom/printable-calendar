@@ -24,7 +24,8 @@
 </template>
 
 <script setup lang="ts">
-import { CalendarEvent, useCalendarEventCollection } from "@/calendar-events";
+import { useCalendarEventCollection } from "@/calendar-events";
+import { DateOnly } from "@/dates";
 import { ref } from "vue";
 import DialogLayout from "./dialog-layout.vue";
 
@@ -42,17 +43,17 @@ const descriptionId = crypto.randomUUID();
 
 function save(): void {
 	events.default.push({
-		...parseDate(),
+		firstOccurance: parseDate(),
 		description: description.value,
 	});
 	dialogOpen.value = false;
 }
 
-function parseDate(): Pick<CalendarEvent, "year" | "month" | "day"> {
+function parseDate(): DateOnly {
 	return {
 		year: parseInt(date.value.substring(0, 4)),
 		month: parseInt(date.value.substring(5, 7)) - 1,
-		day: parseInt(date.value.substring(8, 10)),
+		date: parseInt(date.value.substring(8, 10)),
 	};
 }
 </script>

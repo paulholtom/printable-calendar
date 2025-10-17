@@ -19,7 +19,8 @@
 		"lint": "run-p lint:es lint:style",
 		"lint:es": "eslint .",
 		"lint:style": "stylelint **/*.css **/*.vue --ignore-path .gitignore",
-		"test:unit": "vitest --coverage"
+		"test:unit": "vitest --coverage",
+		"type-check": "vue-tsc --noEmit"
 	},
 	"keywords": [],
 	"author": {

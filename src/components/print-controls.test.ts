@@ -15,6 +15,8 @@ const mockElectronApi = {
 	writeUserConfigFile: vi.fn(),
 	printToPdf: vi.fn(),
 	selectDirectory: vi.fn(),
+	writeCalendarEventsFile: vi.fn(),
+	readCalendarEventsFile: vi.fn(),
 } satisfies ElectronApi;
 
 beforeEach(() => {

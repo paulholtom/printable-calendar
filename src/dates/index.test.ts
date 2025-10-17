@@ -1,8 +1,44 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getDateDisplayValue } from "./index";
+import { DateOnly, datesEqual, getDateDisplayValue } from "./index";
 
 beforeEach(() => {
 	vi.resetAllMocks();
+});
+
+describe(datesEqual, () => {
+	it.each<{ returns: boolean; date1: DateOnly; date2: DateOnly }>([
+		{
+			returns: true,
+			date1: { date: 5, month: 6, year: 2025 },
+			date2: { date: 5, month: 6, year: 2025 },
+		},
+		{
+			returns: false,
+			date1: { date: 6, month: 6, year: 2025 },
+			date2: { date: 5, month: 6, year: 2025 },
+		},
+		{
+			returns: false,
+			date1: { date: 5, month: 7, year: 2025 },
+			date2: { date: 5, month: 6, year: 2025 },
+		},
+		{
+			returns: false,
+			date1: { date: 5, month: 6, year: 2026 },
+			date2: { date: 5, month: 6, year: 2025 },
+		},
+	])(
+		"returns $returns when date1 is $date1 and date2 is $date2",
+		({ returns, date1, date2 }) => {
+			// Arrange
+
+			// Act
+			const result = datesEqual(date1, date2);
+
+			// Assert
+			expect(result).toBe(returns);
+		},
+	);
 });
 
 describe(getDateDisplayValue, () => {

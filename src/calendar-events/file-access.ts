@@ -22,9 +22,9 @@ export function readCalendarEventsFile(): Promise<string> {
 	return promise;
 }
 
-export function writeCalendarEventsFile(config: string): Promise<void> {
+export function writeCalendarEventsFile(contents: string): Promise<void> {
 	const { promise, resolve } = Promise.withResolvers<void>();
-	fs.writeFile(getCalendarEventsFileFullPath(), config, () => {
+	fs.writeFile(getCalendarEventsFileFullPath(), contents, () => {
 		resolve();
 	});
 	return promise;

@@ -1,11 +1,6 @@
+import { displayDate } from "@/dates";
 import { inject, InjectionKey, provide } from "vue";
 import { z } from "zod";
-
-export const displayDate = z.object({
-	month: z.number().optional(),
-	year: z.number(),
-});
-export type DisplayDate = z.infer<typeof displayDate>;
 
 export const userConfig = z.object({
 	pdfDirectory: z.string().optional(),

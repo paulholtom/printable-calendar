@@ -2,66 +2,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { inject, provide } from "vue";
 import {
 	CALENDAR_EVENT_COLLECTION_KEY,
-	CalendarEventCollection,
-	CalendarEvents,
-	getDefaultCalendarEvent,
-	getDefaultCalendarEventCollection,
-	parseCalendarEvents,
 	provideCalendarEventCollection,
 	useCalendarEventCollection,
-} from "./index";
+} from "./injection";
+import {
+	CalendarEventCollection,
+	getDefaultCalendarEventCollection,
+} from "./parsing";
 
 vi.mock(import("vue"));
 
 beforeEach(() => {
 	vi.resetAllMocks();
-});
-
-describe(parseCalendarEvents, () => {
-	it("parses invalid JSON as an empty array", () => {
-		// Arrange
-		// Act
-		const result = parseCalendarEvents("");
-
-		// Assert
-		expect(result).toEqual([]);
-	});
-
-	it("parses an empty array", () => {
-		// Arrange
-		// Act
-		const result = parseCalendarEvents(JSON.stringify([]));
-
-		// Assert
-		expect(result).toEqual([]);
-	});
-
-	it("parses multiple events", () => {
-		// Arrange
-
-		const events: CalendarEvents = [
-			{
-				...getDefaultCalendarEvent(),
-				year: 2010,
-				month: 5,
-				day: 6,
-				description: "First Event",
-			},
-			{
-				...getDefaultCalendarEvent(),
-				year: 2015,
-				month: 10,
-				day: 26,
-				description: "Second Event",
-			},
-		];
-
-		// Act
-		const result = parseCalendarEvents(JSON.stringify(events));
-
-		// Assert
-		expect(result).toEqual(events);
-	});
 });
 
 describe(provideCalendarEventCollection, () => {
