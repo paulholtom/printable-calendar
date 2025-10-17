@@ -12,22 +12,16 @@
 				{{ weekdayName }}
 			</li>
 			<li
-				v-for="n in firstOfMonth.getDay()"
-				:key="n"
-				class="day-of-previous-month"
-			></li>
-			<li
-				v-for="dayOfMonth in lastDayOfMonth.getDate()"
-				:key="dayOfMonth"
-				class="day-of-current-month"
+				v-for="day in daysToDisplay"
+				:key="`${day.year}-${day.month}-${day.date}`"
 			>
-				{{ dayOfMonth }}
+				<CalendarDay
+					:date="day.date"
+					:month="day.month"
+					:year="day.year"
+					:variant="getCalendarDayVariant(day)"
+				/>
 			</li>
-			<li
-				v-for="n in 6 - lastDayOfMonth.getDay()"
-				:key="n"
-				class="day-of-next-month"
-			></li>
 		</ol>
 	</section>
 </template>
@@ -35,6 +29,8 @@
 <script setup lang="ts">
 import { getDateDisplayValue } from "@/dates";
 import { computed } from "vue";
+import { CalendarDayVariant } from "./calendar-day-variant";
+import CalendarDay from "./calendar-day.vue";
 
 const props = defineProps<{
 	/**
@@ -47,8 +43,41 @@ const props = defineProps<{
 	year: number;
 }>();
 
-const firstOfMonth = computed(() => new Date(props.year, props.month));
-const lastDayOfMonth = computed(() => new Date(props.year, props.month + 1, 0));
+type DateToDisplay = {
+	date: number;
+	month: number;
+	year: number;
+};
+
+const daysToDisplay = computed(() => {
+	const days: DateToDisplay[] = [];
+	const firstOfMonth = new Date(props.year, props.month);
+	const endOfMonth = new Date(props.year, props.month + 1, 0);
+	const currentDate = new Date(
+		props.year,
+		props.month,
+		firstOfMonth.getDay() - 6,
+	);
+	while (currentDate <= endOfMonth || days.length % 7 !== 0) {
+		days.push({
+			date: currentDate.getDate(),
+			month: currentDate.getMonth(),
+			year: currentDate.getFullYear(),
+		});
+		currentDate.setDate(currentDate.getDate() + 1);
+	}
+	return days;
+});
+
+function getCalendarDayVariant(date: DateToDisplay): CalendarDayVariant {
+	if (date.month < props.month || date.year < props.year) {
+		return "previous-month";
+	}
+	if (date.month > props.month || date.year > props.year) {
+		return "next-month";
+	}
+	return "current-month";
+}
 
 /**
  * This is an arbitrary date that is a Sunday.
@@ -71,10 +100,10 @@ for (let i = 0; i < 7; i++) {
 	margin: 0;
 	padding: 0;
 	box-sizing: border-box;
-	break-before: always;
 	height: 100%;
 
 	@media print {
+		break-before: always;
 		height: 100vh;
 	}
 }

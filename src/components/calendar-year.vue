@@ -19,3 +19,9 @@ defineProps<{
 	year: number;
 }>();
 </script>
+
+<style scoped lang="css">
+.calendar-year {
+	height: 100%;
+}
+</style>

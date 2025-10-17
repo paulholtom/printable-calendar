@@ -71,6 +71,7 @@ watch(calendarEventCollection, (newValue) => {
 	display: flex;
 	flex-direction: column;
 	height: 100vh;
+	max-height: 100vh;
 	margin: 0;
 	padding: 2px;
 	box-sizing: border-box;
@@ -80,6 +81,11 @@ watch(calendarEventCollection, (newValue) => {
 	flex-grow: 1;
 	margin: 0;
 	padding: 0;
+	overflow: auto;
+
+	@media print {
+		overflow: visible;
+	}
 }
 
 @media print {
