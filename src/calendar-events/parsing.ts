@@ -1,64 +1,55 @@
-import { dateOnly } from "@/dates";
-import { z } from "zod";
-
-const calendarEvent = z.object({
-	/**
-	 * The first time this event occurs.
-	 */
-	firstOccurance: dateOnly,
-	/**
-	 * The description of the event.
-	 */
-	description: z.string(),
-});
-
-/**
- * A single event to display in the calendar
- */
-export type CalendarEvent = z.infer<typeof calendarEvent>;
+import { parseIcsCalendar } from "@ts-ics/schema-zod";
+import { IcsCalendar, IcsEvent } from "ts-ics";
 
 /**
  * @returns An event with defaults for all required values.
  */
-export function getDefaultCalendarEvent(): CalendarEvent {
+export function getDefaultIcsEvent(): IcsEvent {
 	const now = new Date();
+	// Clear the milliseconds since the ics standard doesn't support those.
+	now.setMilliseconds(0);
 	return {
-		firstOccurance: {
-			year: now.getFullYear(),
-			month: now.getMonth(),
-			date: now.getDate(),
+		stamp: {
+			date: now,
+			type: "DATE-TIME",
 		},
-		description: "Unnamed Event",
+		start: {
+			date: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+			type: "DATE",
+		},
+		duration: { hours: 1 },
+		summary: "New Event",
+		uid: `${crypto.randomUUID()}@paulholtom/printable-calendar`,
 	};
 }
-
-const calendarEvents = z.array(calendarEvent);
-
-/**
- * A collection of calendar events.
- */
-export type CalendarEvents = z.infer<typeof calendarEvents>;
 
 /**
  * A collection of differently grouped events.
  */
-export type CalendarEventCollection = { default: CalendarEvents };
+export type IcsCalendarCollection = { default: IcsCalendar };
+
+export function getDefaultIcsCalendar(): IcsCalendar {
+	return {
+		version: "2.0",
+		prodId: "paulholtom/printable-calendar",
+	};
+}
 
 /**
  * @returns A default calendar event collection.
  */
-export function getDefaultCalendarEventCollection(): CalendarEventCollection {
-	return { default: [] };
+export function getDefaultIcsCalendarCollection(): IcsCalendarCollection {
+	return { default: getDefaultIcsCalendar() };
 }
 
 /**
  * @param unparsed The raw JSON string to parse.
  * @returns The parsed calender events.
  */
-export function parseCalendarEvents(unparsed: string): CalendarEvents {
+export function parseIcsCalendarString(unparsed: string): IcsCalendar {
 	try {
-		return calendarEvents.parse(JSON.parse(unparsed));
-	} catch {
-		return [];
+		return parseIcsCalendar(unparsed);
+	} catch (err) {
+		throw new Error("Error reading calendar file.", { cause: err });
 	}
 }

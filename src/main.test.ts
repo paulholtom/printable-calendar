@@ -3,9 +3,10 @@ import mockFs from "mock-fs";
 import { writeFile } from "node:fs/promises";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	readCalendarEventsFile,
-	writeCalendarEventsFile,
+	readCalendarFile,
+	writeCalendarFile,
 } from "./calendar-events/file-access";
+import { ELECTRON_API_EVENTS } from "./electron-api";
 import "./main";
 import { readConfigFile, writeConfigFile } from "./user-config/file-access";
 
@@ -94,13 +95,13 @@ describe("app on activate", () => {
 	});
 });
 
-describe("ipcMain handle read-config-file", () => {
+describe(`ipcMain handle ${ELECTRON_API_EVENTS.READ_CONFIG_FILE}`, () => {
 	const readConfigFileCallback = getCallback(
-		"read-config-file",
+		ELECTRON_API_EVENTS.READ_CONFIG_FILE,
 		ipcMain.handle,
 	);
 
-	it("calls the readConfigFile function", () => {
+	it(`calls the ${readConfigFile.name} function`, () => {
 		// Arrange
 
 		// Act
@@ -111,13 +112,13 @@ describe("ipcMain handle read-config-file", () => {
 	});
 });
 
-describe("ipcMain handle write-config-file", () => {
+describe(`ipcMain handle ${ELECTRON_API_EVENTS.WRITE_CONFIG_FILE}`, () => {
 	const writeConfigFileCallback = getCallback(
-		"write-config-file",
+		ELECTRON_API_EVENTS.WRITE_CONFIG_FILE,
 		ipcMain.handle,
 	);
 
-	it("calls the readConfigFile function", async () => {
+	it(`calls the ${writeConfigFile.name} function`, async () => {
 		// Arrange
 		const contents = "some-content";
 
@@ -135,7 +136,7 @@ describe("ipcMain handle write-config-file", () => {
 
 		// Assert
 		await expect(act).rejects.toThrowError(
-			"Invalid arguments to write-config-file. Expected [string], got []",
+			`Invalid arguments to ${ELECTRON_API_EVENTS.WRITE_CONFIG_FILE}. Expected [string], got []`,
 		);
 	});
 
@@ -146,7 +147,7 @@ describe("ipcMain handle write-config-file", () => {
 
 		// Assert
 		await expect(act).rejects.toThrowError(
-			"Invalid arguments to write-config-file. Expected [string], got [number]",
+			`Invalid arguments to ${ELECTRON_API_EVENTS.WRITE_CONFIG_FILE}. Expected [string], got [number]`,
 		);
 	});
 
@@ -158,64 +159,64 @@ describe("ipcMain handle write-config-file", () => {
 
 		// Assert
 		await expect(act).rejects.toThrowError(
-			"Invalid arguments to write-config-file. Expected [string], got [string,string]",
+			`Invalid arguments to ${ELECTRON_API_EVENTS.WRITE_CONFIG_FILE}. Expected [string], got [string,string]`,
 		);
 	});
 });
 
-describe("ipcMain handle read-calendar-events-file", () => {
-	const readCalendarEventsFileCallback = getCallback(
-		"read-calendar-events-file",
+describe(`ipcMain handle ${ELECTRON_API_EVENTS.READ_CALENDAR_FILE}`, () => {
+	const readCalendarFileCallback = getCallback(
+		ELECTRON_API_EVENTS.READ_CALENDAR_FILE,
 		ipcMain.handle,
 	);
 
-	it("calls the readCalendarEventsFile function", () => {
+	it(`calls the ${readCalendarFile.name} function`, () => {
 		// Arrange
 
 		// Act
-		readCalendarEventsFileCallback();
+		readCalendarFileCallback();
 
 		// Assert
-		expect(readCalendarEventsFile).toHaveBeenCalled();
+		expect(readCalendarFile).toHaveBeenCalled();
 	});
 });
 
-describe("ipcMain handle write-calendar-events-file", () => {
-	const writeCalendarEventsFileCallback = getCallback(
-		"write-calendar-events-file",
+describe(`ipcMain handle ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}`, () => {
+	const writeCalendarFileCallback = getCallback(
+		ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE,
 		ipcMain.handle,
 	);
 
-	it("calls the writeCalendarEventsFIle function", async () => {
+	it(`calls the ${writeCalendarFile.name} function`, async () => {
 		// Arrange
 		const contents = "some-content";
 
 		// Act
-		await writeCalendarEventsFileCallback({}, contents);
+		await writeCalendarFileCallback({}, contents);
 
 		// Assert
-		expect(writeCalendarEventsFile).toHaveBeenCalledWith(contents);
+		expect(writeCalendarFile).toHaveBeenCalledWith(contents);
 	});
 
 	it("throws an error if there are no arguments", async () => {
 		// Arrange
 		// Act
-		const act = async () => await writeCalendarEventsFileCallback({});
+		const act = async () => await writeCalendarFileCallback({});
 
 		// Assert
 		await expect(act).rejects.toThrowError(
-			"Invalid arguments to write-calendar-events-file. Expected [string], got []",
+			`Invalid arguments to ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}. Expected [string], got []`,
 		);
 	});
 
 	it("throws an error if the argument is the wrong type", async () => {
 		// Arrange
 		// Act
-		const act = async () => await writeCalendarEventsFileCallback({}, 5);
+		const act = async () => await writeCalendarFileCallback({}, 5);
 
 		// Assert
 		await expect(act).rejects.toThrowError(
-			"Invalid arguments to write-calendar-events-file. Expected [string], got [number]",
+			`Invalid arguments to ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}. Expected [string], got [number]`,
 		);
 	});
 
@@ -223,17 +224,20 @@ describe("ipcMain handle write-calendar-events-file", () => {
 		// Arrange
 		// Act
 		const act = async () =>
-			await writeCalendarEventsFileCallback({}, "test", "test");
+			await writeCalendarFileCallback({}, "test", "test");
 
 		// Assert
 		await expect(act).rejects.toThrowError(
-			"Invalid arguments to write-calendar-events-file. Expected [string], got [string,string]",
+			`Invalid arguments to ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}. Expected [string], got [string,string]`,
 		);
 	});
 });
 
-describe("ipcMain handle print-pdf", () => {
-	const printPdfCallback = getCallback("print-pdf", ipcMain.handle);
+describe(`ipcMain handle ${ELECTRON_API_EVENTS.PRINT_PDF}`, () => {
+	const printPdfCallback = getCallback(
+		ELECTRON_API_EVENTS.PRINT_PDF,
+		ipcMain.handle,
+	);
 
 	it("creates a pdf at the specified path if one doesn't already exist", async () => {
 		// Arrange
@@ -324,9 +328,9 @@ describe("ipcMain handle print-pdf", () => {
 	});
 });
 
-describe("ipcMain handle select-directory", () => {
+describe(`ipcMain handle ${ELECTRON_API_EVENTS.SELECT_DIRECTORY}`, () => {
 	const selectDirectoryCallback = getCallback(
-		"select-directory",
+		ELECTRON_API_EVENTS.SELECT_DIRECTORY,
 		ipcMain.handle,
 	);
 
@@ -356,5 +360,23 @@ describe("ipcMain handle select-directory", () => {
 
 		// Assert
 		expect(result).toBe("some-file-path");
+	});
+});
+
+describe(`ipcMain handle ${ELECTRON_API_EVENTS.CLOSE_WINDOW}`, () => {
+	const closeWindowCallback = getCallback(
+		ELECTRON_API_EVENTS.CLOSE_WINDOW,
+		ipcMain.handle,
+	);
+
+	it("closes the browser window", async () => {
+		// Arrange
+		const close = vi.fn();
+
+		// Act
+		await closeWindowCallback({ sender: { close } });
+
+		// Assert
+		expect(close).toHaveBeenCalled();
 	});
 });

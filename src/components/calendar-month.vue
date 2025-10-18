@@ -11,10 +11,7 @@
 			>
 				{{ weekdayName }}
 			</li>
-			<li
-				v-for="date in datesToDisplay"
-				:key="`${date.year}-${date.month}-${date.date}`"
-			>
+			<li v-for="date in datesToDisplay" :key="date.getTime()">
 				<CalendarDay
 					:date="date"
 					:variant="getCalendarDayVariant(date)"
@@ -25,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { DateOnly, getDateDisplayValue } from "@/dates";
+import { getDateDisplayValue } from "@/dates";
 import { computed } from "vue";
 import { CalendarDayVariant } from "./calendar-day-variant";
 import CalendarDay from "./calendar-day.vue";
@@ -41,31 +38,28 @@ const props = defineProps<{
 	year: number;
 }>();
 
+const firstOfMonth = computed(() => new Date(props.year, props.month));
+const endOfMonth = computed(() => new Date(props.year, props.month + 1, 0));
+
 const datesToDisplay = computed(() => {
-	const days: DateOnly[] = [];
-	const firstOfMonth = new Date(props.year, props.month);
-	const endOfMonth = new Date(props.year, props.month + 1, 0);
+	const dates: Date[] = [];
 	const currentDate = new Date(
 		props.year,
 		props.month,
-		firstOfMonth.getDay() - 5,
+		1 - firstOfMonth.value.getDay(),
 	);
-	while (currentDate <= endOfMonth || days.length % 7 !== 0) {
-		days.push({
-			date: currentDate.getDate(),
-			month: currentDate.getMonth(),
-			year: currentDate.getFullYear(),
-		});
+	while (currentDate <= endOfMonth.value || dates.length % 7 !== 0) {
+		dates.push(new Date(currentDate.getTime()));
 		currentDate.setDate(currentDate.getDate() + 1);
 	}
-	return days;
+	return dates;
 });
 
-function getCalendarDayVariant(date: DateOnly): CalendarDayVariant {
-	if (date.month < props.month || date.year < props.year) {
+function getCalendarDayVariant(date: Date): CalendarDayVariant {
+	if (date < firstOfMonth.value) {
 		return "previous-month";
 	}
-	if (date.month > props.month || date.year > props.year) {
+	if (date > endOfMonth.value) {
 		return "next-month";
 	}
 	return "current-month";

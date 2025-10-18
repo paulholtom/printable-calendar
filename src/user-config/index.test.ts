@@ -77,6 +77,14 @@ describe(provideUserConfig, () => {
 });
 
 describe(useUserConfig, () => {
+	it("throws an error if the user config has not been provided", () => {
+		// Arrange
+		vi.mocked(inject).mockImplementationOnce(() => undefined);
+
+		// Act / Assert
+		expect(() => useUserConfig()).toThrowError();
+	});
+
 	it("injects the user config", () => {
 		// Arrange
 		const config = getDefaultUserConfig();

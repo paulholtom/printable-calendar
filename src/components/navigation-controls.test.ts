@@ -5,7 +5,7 @@ import {
 	UserConfig,
 } from "@/user-config";
 import { fireEvent, render } from "@testing-library/vue";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import NavigationControls from "./navigation-controls.vue";
 
 const mockElectronApi = {
@@ -13,8 +13,9 @@ const mockElectronApi = {
 	writeUserConfigFile: vi.fn(),
 	printToPdf: vi.fn(),
 	selectDirectory: vi.fn(),
-	writeCalendarEventsFile: vi.fn(),
-	readCalendarEventsFile: vi.fn(),
+	writeCalendarFile: vi.fn(),
+	readCalendarFile: vi.fn(),
+	closeWindow: vi.fn(),
 } satisfies ElectronApi;
 
 beforeEach(() => {
@@ -22,10 +23,6 @@ beforeEach(() => {
 
 	window.electronApi = mockElectronApi;
 	window.alert = vi.fn();
-});
-
-afterEach(() => {
-	window.electronApi = undefined;
 });
 
 it("sets the month from the user config", async () => {

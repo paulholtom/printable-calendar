@@ -1,14 +1,10 @@
-import { DateOnly, datesEqual } from "@/dates";
-import { CalendarEvent } from "./parsing";
+import { IcsEvent } from "ts-ics";
 
 /**
  * @param event The event to check.
  * @param date The date to check.
  * @returns If the event should appear on the specified day.
  */
-export function eventAppearsOnDay(
-	event: CalendarEvent,
-	date: DateOnly,
-): boolean {
-	return datesEqual(event.firstOccurance, date);
+export function eventAppearsOnDay(event: IcsEvent, date: Date): boolean {
+	return event.start.date.getTime() === date.getTime();
 }

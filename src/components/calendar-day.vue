@@ -1,18 +1,14 @@
 <template>
 	<section class="calendar-day" :class="[variant]">
-		<header class="date-display">{{ date.date }}</header>
-		<p v-for="event in events" :key="event.description">
-			{{ event.description }}
+		<header class="date-display">{{ date.getDate() }}</header>
+		<p v-for="event in events" :key="event.uid">
+			{{ event.summary }}
 		</p>
 	</section>
 </template>
 
 <script setup lang="ts">
-import {
-	eventAppearsOnDay,
-	useCalendarEventCollection,
-} from "@/calendar-events";
-import { DateOnly } from "@/dates";
+import { eventAppearsOnDay, useIcsCalendarCollection } from "@/calendar-events";
 import { computed } from "vue";
 import { CalendarDayVariant } from "./calendar-day-variant";
 
@@ -20,18 +16,18 @@ const props = defineProps<{
 	/**
 	 * The date to be displayed.
 	 */
-	date: DateOnly;
+	date: Date;
 	/**
 	 * The variant to be displayed.
 	 */
 	variant: CalendarDayVariant;
 }>();
 
-const eventCollection = useCalendarEventCollection();
+const eventCollection = useIcsCalendarCollection();
 
 const events = computed(() =>
 	Object.values(eventCollection)
-		.flat()
+		.flatMap((calendar) => calendar.events ?? [])
 		.filter((event) => eventAppearsOnDay(event, props.date)),
 );
 </script>

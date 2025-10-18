@@ -1,6 +1,6 @@
 import {
-	CALENDAR_EVENT_COLLECTION_KEY,
-	getDefaultCalendarEventCollection,
+	ICS_CALENDAR_COLLECTION_KEY,
+	getDefaultIcsCalendarCollection,
 } from "@/calendar-events";
 import { render } from "@testing-library/vue";
 import { expect, it } from "vitest";
@@ -15,8 +15,8 @@ it("displays every month of the provided year", () => {
 		props: { year },
 		global: {
 			provide: {
-				[CALENDAR_EVENT_COLLECTION_KEY]:
-					getDefaultCalendarEventCollection(),
+				[ICS_CALENDAR_COLLECTION_KEY]:
+					getDefaultIcsCalendarCollection(),
 			},
 		},
 	});

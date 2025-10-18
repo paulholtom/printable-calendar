@@ -1,40 +1,48 @@
 import {
-	CALENDAR_EVENT_COLLECTION_KEY,
-	CalendarEvent,
-	getDefaultCalendarEvent,
-	getDefaultCalendarEventCollection,
+	getDefaultIcsCalendar,
+	getDefaultIcsCalendarCollection,
+	getDefaultIcsEvent,
+	ICS_CALENDAR_COLLECTION_KEY,
+	IcsCalendarCollection,
 } from "@/calendar-events";
-import { DateOnly } from "@/dates";
 import { render } from "@testing-library/vue";
+import { IcsEvent } from "ts-ics";
 import { it } from "vitest";
 import CalendarDay from "./calendar-day.vue";
 
 it("displays the provided day", () => {
 	// Arrange
-	const date: DateOnly = { date: 10, month: 5, year: 2025 };
+	const date = new Date(2025, 10, 15);
 
 	// Act
 	const wrapper = render(CalendarDay, {
 		props: { date, variant: "current-month" },
 		global: {
 			provide: {
-				[CALENDAR_EVENT_COLLECTION_KEY]:
-					getDefaultCalendarEventCollection(),
+				[ICS_CALENDAR_COLLECTION_KEY]:
+					getDefaultIcsCalendarCollection(),
 			},
 		},
 	});
 
 	// Assert
-	wrapper.getByText(date.date);
+	wrapper.getByText(date.getDate());
 });
 
 it("displays events for the provided day", () => {
 	// Arrange
-	const date: DateOnly = { date: 10, month: 5, year: 2025 };
-	const event: CalendarEvent = {
-		...getDefaultCalendarEvent(),
-		firstOccurance: date,
-		description: "Some Event",
+	const date = new Date(2025, 5, 10);
+	const event: IcsEvent = {
+		...getDefaultIcsEvent(),
+		start: { date },
+		summary: "Some Event",
+	};
+	const calendarCollection: IcsCalendarCollection = {
+		...getDefaultIcsCalendarCollection(),
+		default: {
+			...getDefaultIcsCalendar(),
+			events: [event],
+		},
 	};
 
 	// Act
@@ -42,14 +50,11 @@ it("displays events for the provided day", () => {
 		props: { date, variant: "current-month" },
 		global: {
 			provide: {
-				[CALENDAR_EVENT_COLLECTION_KEY]: {
-					...getDefaultCalendarEventCollection(),
-					default: [event],
-				},
+				[ICS_CALENDAR_COLLECTION_KEY]: calendarCollection,
 			},
 		},
 	});
 
 	// Assert
-	wrapper.getByText(event.description);
+	wrapper.getByText(event.summary);
 });

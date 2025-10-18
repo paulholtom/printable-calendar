@@ -3,9 +3,9 @@ import mockFs from "mock-fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	CALENDAR_EVENTS_FILE_NAME,
-	readCalendarEventsFile,
-	writeCalendarEventsFile,
+	DEFAULT_CALENDAR_FILE_NAME,
+	readCalendarFile,
+	writeCalendarFile,
 } from "./file-access";
 
 vi.mock(import("electron"));
@@ -19,44 +19,44 @@ beforeEach(() => {
 	vi.mocked(app.getPath).mockReturnValue(FAKE_HOME_DIRECTORY);
 });
 
-describe(readCalendarEventsFile, () => {
-	it("returns an empty string if the file doesn't exist", async () => {
+describe(readCalendarFile, () => {
+	it("returns undefined if the file doesn't exist", async () => {
 		// Arrange
 		mockFs({});
 
 		// Act
-		const result = await readCalendarEventsFile();
+		const result = await readCalendarFile();
 
 		// Assert
-		expect(result).toEqual("");
+		expect(result).toBeUndefined();
 	});
 
 	it("returns the file contents if it exists", async () => {
 		// Arrange
 		const expectedFileContent = "some-file-content";
 		mockFs({
-			[join(FAKE_HOME_DIRECTORY, CALENDAR_EVENTS_FILE_NAME)]:
+			[join(FAKE_HOME_DIRECTORY, DEFAULT_CALENDAR_FILE_NAME)]:
 				expectedFileContent,
 		});
 
 		// Act
-		const result = await readCalendarEventsFile();
+		const result = await readCalendarFile();
 
 		// Assert
 		expect(result).toBe(expectedFileContent);
 	});
 });
 
-describe(writeCalendarEventsFile, () => {
+describe(writeCalendarFile, () => {
 	it("writes to the config file", async () => {
 		// Arrange
 		const expectedContents = "config file contents";
 		mockFs({ [FAKE_HOME_DIRECTORY]: {} });
 
 		// Act
-		await writeCalendarEventsFile(expectedContents);
+		await writeCalendarFile(expectedContents);
 
 		// Assert
-		expect(await readCalendarEventsFile()).toEqual(expectedContents);
+		expect(await readCalendarFile()).toEqual(expectedContents);
 	});
 });

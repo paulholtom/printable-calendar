@@ -13,18 +13,18 @@ export interface ElectronApi {
 	 */
 	writeUserConfigFile(contents: string): Promise<void>;
 	/**
-	 * Write to the calendar event collection file.
+	 * Write to the calendar file.
 	 *
 	 * @param contents The contents of the file to be written.
 	 * @returns A promise that resolves when the file is successfully written.
 	 */
-	writeCalendarEventsFile(contents: string): Promise<void>;
+	writeCalendarFile(contents: string): Promise<void>;
 	/**
-	 * Reads the calendar event collection file.
+	 * Reads the calendar file.
 	 *
-	 * @returns A promise that resolves to the contents of the file or an empty string if the file couldn't be read.
+	 * @returns A promise that resolves to the contents of the file or undefined if the file couldn't be read.
 	 */
-	readCalendarEventsFile(): Promise<string>;
+	readCalendarFile(): Promise<string | undefined>;
 	/**
 	 * Create a PDF of the current page.
 	 *
@@ -38,4 +38,21 @@ export interface ElectronApi {
 	 * @returns A promise that resolves to a directory path or undefined if the user didn't select one.
 	 */
 	selectDirectory(): Promise<string | undefined>;
+	/**
+	 * Close the window that triggered this event.
+	 */
+	closeWindow(): Promise<void>;
+}
+
+/**
+ * The strings identifying different electron api events for inter process control.
+ */
+export enum ELECTRON_API_EVENTS {
+	READ_CONFIG_FILE = "read-config-file",
+	WRITE_CONFIG_FILE = "write-config-file",
+	READ_CALENDAR_FILE = "read-calendar-file",
+	WRITE_CALENDAR_FILE = "write-calendar-file",
+	PRINT_PDF = "print-pdf",
+	SELECT_DIRECTORY = "select-directory",
+	CLOSE_WINDOW = "close-window",
 }

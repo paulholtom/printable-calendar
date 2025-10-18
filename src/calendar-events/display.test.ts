@@ -1,19 +1,15 @@
-import { DateOnly } from "@/dates";
+import { IcsEvent } from "ts-ics";
 import { describe, expect, it } from "vitest";
 import { eventAppearsOnDay } from "./display";
-import { CalendarEvent, getDefaultCalendarEvent } from "./parsing";
+import { getDefaultIcsEvent } from "./parsing";
 
 describe(eventAppearsOnDay, () => {
 	it("returns true if the event's first occurance is the specified date", () => {
 		// Arrange
-		const date: DateOnly = {
-			date: 5,
-			month: 5,
-			year: 2025,
-		};
-		const event: CalendarEvent = {
-			...getDefaultCalendarEvent(),
-			firstOccurance: date,
+		const date = new Date(2025, 10, 23);
+		const event: IcsEvent = {
+			...getDefaultIcsEvent(),
+			start: { date },
 		};
 
 		// Act
@@ -25,17 +21,11 @@ describe(eventAppearsOnDay, () => {
 
 	it("returns false if the event's first occurance isn't the specified date", () => {
 		// Arrange
-		const date: DateOnly = {
-			date: 5,
-			month: 5,
-			year: 2025,
-		};
-		const event: CalendarEvent = {
-			...getDefaultCalendarEvent(),
-			firstOccurance: {
-				date: 7,
-				month: 5,
-				year: 2025,
+		const date = new Date(2025, 5, 5);
+		const event: IcsEvent = {
+			...getDefaultIcsEvent(),
+			start: {
+				date: new Date(2025, 5, 7),
 			},
 		};
 

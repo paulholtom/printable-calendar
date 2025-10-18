@@ -42,7 +42,13 @@ export const USER_CONFIG_KEY: InjectionKey<UserConfig> = Symbol("user-config");
  * @returns The user config.
  */
 export function useUserConfig(): UserConfig {
-	return inject(USER_CONFIG_KEY);
+	const injectedValue = inject(USER_CONFIG_KEY);
+	if (!injectedValue) {
+		throw new Error(
+			`Tried to inject ${USER_CONFIG_KEY.toString()} but it has not been provided.`,
+		);
+	}
+	return injectedValue;
 }
 
 /**

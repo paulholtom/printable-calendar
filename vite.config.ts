@@ -23,7 +23,7 @@ export function extendBaseConfig(extendedConfig: ViteUserConfig) {
 				coverage: {
 					provider: "v8",
 					exclude: [
-						...configDefaults.coverage.exclude,
+						...(configDefaults.coverage.exclude ?? []),
 						// Don't test config files.
 						"*.config.*",
 						"**/__*__/**",

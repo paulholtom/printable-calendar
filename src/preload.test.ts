@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { describe, expect, it, vi } from "vitest";
-import { ElectronApi } from "./electron-api";
+import { ELECTRON_API_EVENTS, ElectronApi } from "./electron-api";
 import "./preload";
 
 vi.mock(import("electron"), async (importOriginal) => {
@@ -34,7 +34,7 @@ it("exposes the electron api in the main world", () => {
 });
 
 describe("readUserConfigFile", () => {
-	it("invokes read-config-file", async () => {
+	it(`invokes ${ELECTRON_API_EVENTS.READ_CONFIG_FILE}`, async () => {
 		// Arrange
 		const electronApi = getElectronApi();
 
@@ -42,12 +42,14 @@ describe("readUserConfigFile", () => {
 		await electronApi.readUserConfigFile();
 
 		// Assert
-		expect(ipcRenderer.invoke).toHaveBeenCalledWith("read-config-file");
+		expect(ipcRenderer.invoke).toHaveBeenCalledWith(
+			ELECTRON_API_EVENTS.READ_CONFIG_FILE,
+		);
 	});
 });
 
 describe("writeUserConfigFile", () => {
-	it("invokes write-config-file", async () => {
+	it(`invokes ${ELECTRON_API_EVENTS.WRITE_CONFIG_FILE}`, async () => {
 		// Arrange
 		const contents = "some-file";
 		const electronApi = getElectronApi();
@@ -57,46 +59,46 @@ describe("writeUserConfigFile", () => {
 
 		// Assert
 		expect(ipcRenderer.invoke).toHaveBeenCalledWith(
-			"write-config-file",
+			ELECTRON_API_EVENTS.WRITE_CONFIG_FILE,
 			contents,
 		);
 	});
 });
 
 describe("readCalendarEventsFile", () => {
-	it("read-calendar-events-file", async () => {
+	it(`invokes ${ELECTRON_API_EVENTS.READ_CALENDAR_FILE}`, async () => {
 		// Arrange
 		const electronApi = getElectronApi();
 
 		// Act
-		await electronApi.readCalendarEventsFile();
+		await electronApi.readCalendarFile();
 
 		// Assert
 		expect(ipcRenderer.invoke).toHaveBeenCalledWith(
-			"read-calendar-events-file",
+			ELECTRON_API_EVENTS.READ_CALENDAR_FILE,
 		);
 	});
 });
 
 describe("writeCalendarEventsFile", () => {
-	it("invokes write-calendar-events-file", async () => {
+	it(`invokes ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}`, async () => {
 		// Arrange
 		const contents = "some-file";
 		const electronApi = getElectronApi();
 
 		// Act
-		await electronApi.writeCalendarEventsFile(contents);
+		await electronApi.writeCalendarFile(contents);
 
 		// Assert
 		expect(ipcRenderer.invoke).toHaveBeenCalledWith(
-			"write-calendar-events-file",
+			ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE,
 			contents,
 		);
 	});
 });
 
 describe("printToPdf", () => {
-	it("invokes print-pdf", async () => {
+	it(`invokes ${ELECTRON_API_EVENTS.PRINT_PDF}`, async () => {
 		// Arrange
 		const filename = "some-file";
 		const electronApi = getElectronApi();
@@ -105,12 +107,15 @@ describe("printToPdf", () => {
 		await electronApi.printToPdf(filename);
 
 		// Assert
-		expect(ipcRenderer.invoke).toHaveBeenCalledWith("print-pdf", filename);
+		expect(ipcRenderer.invoke).toHaveBeenCalledWith(
+			ELECTRON_API_EVENTS.PRINT_PDF,
+			filename,
+		);
 	});
 });
 
 describe("selectDirectory", () => {
-	it("invokes select-directory", async () => {
+	it(`invokes ${ELECTRON_API_EVENTS.SELECT_DIRECTORY}`, async () => {
 		// Arrange
 		const electronApi = getElectronApi();
 
@@ -118,6 +123,23 @@ describe("selectDirectory", () => {
 		await electronApi.selectDirectory();
 
 		// Assert
-		expect(ipcRenderer.invoke).toHaveBeenCalledWith("select-directory");
+		expect(ipcRenderer.invoke).toHaveBeenCalledWith(
+			ELECTRON_API_EVENTS.SELECT_DIRECTORY,
+		);
+	});
+});
+
+describe("closeWindow", () => {
+	it(`invokes ${ELECTRON_API_EVENTS.CLOSE_WINDOW}`, async () => {
+		// Arrange
+		const electronApi = getElectronApi();
+
+		// Act
+		await electronApi.closeWindow();
+
+		// Assert
+		expect(ipcRenderer.invoke).toHaveBeenCalledWith(
+			ELECTRON_API_EVENTS.CLOSE_WINDOW,
+		);
 	});
 });

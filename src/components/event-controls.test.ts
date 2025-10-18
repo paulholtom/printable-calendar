@@ -1,14 +1,22 @@
 import {
-	CALENDAR_EVENT_COLLECTION_KEY,
-	CalendarEventCollection,
-	getDefaultCalendarEventCollection,
+	ICS_CALENDAR_COLLECTION_KEY,
+	IcsCalendarCollection,
+	getDefaultIcsCalendar,
+	getDefaultIcsCalendarCollection,
+	getDefaultIcsEvent,
 } from "@/calendar-events";
 import { fireEvent, render } from "@testing-library/vue";
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import EventControls from "./event-controls.vue";
 
 beforeEach(() => {
 	vi.resetAllMocks();
+	vi.useFakeTimers();
+	vi.setSystemTime(new Date(2010, 5, 7));
+});
+
+afterEach(() => {
+	vi.useRealTimers();
 });
 
 it("doesn't display the dialog initially", () => {
@@ -17,8 +25,8 @@ it("doesn't display the dialog initially", () => {
 	const wrapper = render(EventControls, {
 		global: {
 			provide: {
-				[CALENDAR_EVENT_COLLECTION_KEY]:
-					getDefaultCalendarEventCollection(),
+				[ICS_CALENDAR_COLLECTION_KEY]:
+					getDefaultIcsCalendarCollection(),
 			},
 		},
 	});
@@ -32,8 +40,8 @@ it("displays the dialog if the add button is clicked", async () => {
 	const wrapper = render(EventControls, {
 		global: {
 			provide: {
-				[CALENDAR_EVENT_COLLECTION_KEY]:
-					getDefaultCalendarEventCollection(),
+				[ICS_CALENDAR_COLLECTION_KEY]:
+					getDefaultIcsCalendarCollection(),
 			},
 		},
 	});
@@ -50,9 +58,10 @@ it.each(["Close", "Cancel"])(
 	"closes the dialog without modifying the events when the %s button is clicked",
 	async (buttonName) => {
 		// Arrange
-		const events: CalendarEventCollection = { default: [] };
+		const calendar: IcsCalendarCollection =
+			getDefaultIcsCalendarCollection();
 		const wrapper = render(EventControls, {
-			global: { provide: { [CALENDAR_EVENT_COLLECTION_KEY]: events } },
+			global: { provide: { [ICS_CALENDAR_COLLECTION_KEY]: calendar } },
 		});
 		const addButton = wrapper.getByRole("button", { name: "Add Event" });
 		await fireEvent.click(addButton);
@@ -63,16 +72,16 @@ it.each(["Close", "Cancel"])(
 
 		// Assert
 		expect(wrapper.queryByRole("dialog")).toBeNull();
-		expect(events.default.length).toBe(0);
+		expect(calendar.default.events).toBeUndefined();
 	},
 );
 
 it("creates a new event when the save button is clicked based on values entered", async () => {
 	// Arrange
-	const enteredDescription = "A description";
-	const events: CalendarEventCollection = { default: [] };
+	const enteredSummary = "A Summary";
+	const events: IcsCalendarCollection = getDefaultIcsCalendarCollection();
 	const wrapper = render(EventControls, {
-		global: { provide: { [CALENDAR_EVENT_COLLECTION_KEY]: events } },
+		global: { provide: { [ICS_CALENDAR_COLLECTION_KEY]: events } },
 	});
 	const addButton = wrapper.getByRole("button", { name: "Add Event" });
 	await fireEvent.click(addButton);
@@ -80,24 +89,30 @@ it("creates a new event when the save button is clicked based on values entered"
 	// Act
 	const dateInput = wrapper.getByLabelText("Date");
 	await fireEvent.update(dateInput, "2010-05-03");
-	const descriptionInput = wrapper.getByLabelText("Description");
-	await fireEvent.update(descriptionInput, enteredDescription);
+	const summaryInput = wrapper.getByLabelText("Summary");
+	await fireEvent.update(summaryInput, enteredSummary);
 	const saveButton = wrapper.getByRole("button", { name: "Save" });
 	await fireEvent.click(saveButton);
 
 	// Assert
 	expect(wrapper.queryByRole("dialog")).toBeNull();
-	const expectedResult: CalendarEventCollection = {
-		default: [
-			{
-				firstOccurance: {
-					year: 2010,
-					month: 4,
-					date: 3,
+	const expectedResult: IcsCalendarCollection = {
+		...getDefaultIcsCalendarCollection(),
+		default: {
+			...getDefaultIcsCalendar(),
+			events: [
+				{
+					...getDefaultIcsEvent(),
+					start: {
+						date: new Date(2010, 4, 3),
+					},
+					summary: enteredSummary,
+					uid: expect.stringContaining(
+						"@paulholtom/printable-calendar",
+					),
 				},
-				description: enteredDescription,
-			},
-		],
+			],
+		},
 	};
 	expect(events).toEqual(expectedResult);
 });

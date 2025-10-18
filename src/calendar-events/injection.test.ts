@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { inject, provide } from "vue";
 import {
-	CALENDAR_EVENT_COLLECTION_KEY,
-	provideCalendarEventCollection,
-	useCalendarEventCollection,
+	ICS_CALENDAR_COLLECTION_KEY,
+	provideIcsCalendarCollection,
+	useIcsCalendarCollection,
 } from "./injection";
 import {
-	CalendarEventCollection,
-	getDefaultCalendarEventCollection,
+	IcsCalendarCollection,
+	getDefaultIcsCalendarCollection,
 } from "./parsing";
 
 vi.mock(import("vue"));
@@ -16,35 +16,41 @@ beforeEach(() => {
 	vi.resetAllMocks();
 });
 
-describe(provideCalendarEventCollection, () => {
+describe(provideIcsCalendarCollection, () => {
 	it("provides the calendar event collection", () => {
 		// Arrange
-		const eventCollection: CalendarEventCollection =
-			getDefaultCalendarEventCollection();
+		const eventCollection: IcsCalendarCollection =
+			getDefaultIcsCalendarCollection();
 
 		// Act
-		provideCalendarEventCollection(eventCollection);
+		provideIcsCalendarCollection(eventCollection);
 
 		// Assert
 		expect(provide).toHaveBeenCalledWith(
-			CALENDAR_EVENT_COLLECTION_KEY,
+			ICS_CALENDAR_COLLECTION_KEY,
 			eventCollection,
 		);
 	});
 });
 
-describe(useCalendarEventCollection, () => {
+describe(useIcsCalendarCollection, () => {
+	it("throws an error if the calendar collection has been provided", () => {
+		// Arrange
+		// Act / Assert
+		expect(() => useIcsCalendarCollection()).toThrowError();
+	});
+
 	it("injects the calendar event collection", () => {
 		// Arrange
-		const calendarEventCollection = useCalendarEventCollection();
+		const calendarEventCollection = getDefaultIcsCalendarCollection();
 		vi.mocked(inject).mockImplementationOnce((key) =>
-			key === CALENDAR_EVENT_COLLECTION_KEY
+			key === ICS_CALENDAR_COLLECTION_KEY
 				? calendarEventCollection
 				: undefined,
 		);
 
 		// Act
-		const result = useCalendarEventCollection();
+		const result = useIcsCalendarCollection();
 
 		// Assert
 		expect(result).toBe(calendarEventCollection);

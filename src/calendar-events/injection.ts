@@ -1,17 +1,24 @@
 import { inject, InjectionKey, provide } from "vue";
-import { CalendarEventCollection } from "./parsing";
+import { IcsCalendarCollection } from "./parsing";
 
 /**
  * The injection key for the calendar events.
  */
-export const CALENDAR_EVENT_COLLECTION_KEY: InjectionKey<CalendarEventCollection> =
-	Symbol("calendar-event-collection");
+export const ICS_CALENDAR_COLLECTION_KEY: InjectionKey<IcsCalendarCollection> =
+	Symbol("ics-calendar-collection");
 
 /**
  * @returns The calendar events.
  */
-export function useCalendarEventCollection(): CalendarEventCollection {
-	return inject(CALENDAR_EVENT_COLLECTION_KEY);
+export function useIcsCalendarCollection(): IcsCalendarCollection {
+	const injectedValue = inject(ICS_CALENDAR_COLLECTION_KEY);
+	if (!injectedValue) {
+		throw new Error(
+			`Tried to inject ${ICS_CALENDAR_COLLECTION_KEY.toString()} but it has not been provided.`,
+		);
+	}
+
+	return injectedValue;
 }
 
 /**
@@ -19,8 +26,8 @@ export function useCalendarEventCollection(): CalendarEventCollection {
  *
  * @param calendarEventCollection The calendar events to be provided.
  */
-export function provideCalendarEventCollection(
-	calendarEventCollection: CalendarEventCollection,
+export function provideIcsCalendarCollection(
+	calendarEventCollection: IcsCalendarCollection,
 ): void {
-	provide(CALENDAR_EVENT_COLLECTION_KEY, calendarEventCollection);
+	provide(ICS_CALENDAR_COLLECTION_KEY, calendarEventCollection);
 }

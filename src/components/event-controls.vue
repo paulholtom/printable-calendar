@@ -6,12 +6,12 @@
 				<input :id="dateId" type="date" v-model="date" />
 			</div>
 			<div class="input-and-label">
-				<label :for="descriptionId">Description</label>
+				<label :for="summaryId">Summary</label>
 				<input
-					:id="descriptionId"
+					:id="summaryId"
 					type="text"
-					placeholder="Enter a description"
-					v-model="description"
+					placeholder="Enter a summary"
+					v-model="summary"
 				/>
 			</div>
 			<template #footer>
@@ -24,12 +24,14 @@
 </template>
 
 <script setup lang="ts">
-import { useCalendarEventCollection } from "@/calendar-events";
-import { DateOnly } from "@/dates";
+import {
+	getDefaultIcsEvent,
+	useIcsCalendarCollection,
+} from "@/calendar-events";
 import { ref } from "vue";
 import DialogLayout from "./dialog-layout.vue";
 
-const events = useCalendarEventCollection();
+const calendar = useIcsCalendarCollection();
 
 const dialogOpen = ref(false);
 const defaultDate = new Date();
@@ -38,22 +40,27 @@ const date = ref(
 );
 const dateId = crypto.randomUUID();
 
-const description = ref("");
-const descriptionId = crypto.randomUUID();
+const summary = ref("");
+const summaryId = crypto.randomUUID();
 
 function save(): void {
-	events.default.push({
-		firstOccurance: parseDate(),
-		description: description.value,
+	if (calendar.default.events === undefined) {
+		calendar.default.events = [];
+	}
+
+	calendar.default.events.push({
+		...getDefaultIcsEvent(),
+		start: { date: parseDate() },
+		summary: summary.value,
 	});
 	dialogOpen.value = false;
 }
 
-function parseDate(): DateOnly {
-	return {
-		year: parseInt(date.value.substring(0, 4)),
-		month: parseInt(date.value.substring(5, 7)) - 1,
-		date: parseInt(date.value.substring(8, 10)),
-	};
+function parseDate(): Date {
+	return new Date(
+		parseInt(date.value.substring(0, 4)),
+		parseInt(date.value.substring(5, 7)) - 1,
+		parseInt(date.value.substring(8, 10)),
+	);
 }
 </script>

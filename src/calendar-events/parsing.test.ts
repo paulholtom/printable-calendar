@@ -1,53 +1,63 @@
+import { generateIcsCalendar, IcsCalendar } from "ts-ics";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	CalendarEvents,
-	getDefaultCalendarEvent,
-	parseCalendarEvents,
+	getDefaultIcsCalendar,
+	getDefaultIcsEvent,
+	parseIcsCalendarString,
 } from "./parsing";
 
 beforeEach(() => {
 	vi.resetAllMocks();
 });
 
-describe(parseCalendarEvents, () => {
-	it("parses invalid JSON as an empty array", () => {
+describe(parseIcsCalendarString, () => {
+	it("throws an error if the file is not in a valid format", () => {
 		// Arrange
 		// Act
-		const result = parseCalendarEvents("");
-
 		// Assert
-		expect(result).toEqual([]);
+		expect(() => parseIcsCalendarString("")).toThrowError();
 	});
 
-	it("parses an empty array", () => {
+	it("parses an empty calendar", () => {
 		// Arrange
+		const calendar = getDefaultIcsCalendar();
+
 		// Act
-		const result = parseCalendarEvents(JSON.stringify([]));
+		const result = parseIcsCalendarString(generateIcsCalendar(calendar));
 
 		// Assert
-		expect(result).toEqual([]);
+		expect(result).toEqual(calendar);
 	});
 
 	it("parses multiple events", () => {
 		// Arrange
 
-		const events: CalendarEvents = [
-			{
-				...getDefaultCalendarEvent(),
-				firstOccurance: { year: 2010, month: 5, date: 6 },
-				description: "First Event",
-			},
-			{
-				...getDefaultCalendarEvent(),
-				firstOccurance: { year: 2015, month: 10, date: 26 },
-				description: "Second Event",
-			},
-		];
+		const calendar: IcsCalendar = {
+			...getDefaultIcsCalendar(),
+			events: [
+				{
+					...getDefaultIcsEvent(),
+					start: {
+						date: new Date(Date.UTC(2010, 5, 6)),
+						type: "DATE",
+					},
+					summary: "First Event",
+				},
+				{
+					...getDefaultIcsEvent(),
+					start: {
+						date: new Date(Date.UTC(2015, 10, 26)),
+						type: "DATE",
+					},
+					summary: "Second Event",
+				},
+			],
+		};
 
 		// Act
-		const result = parseCalendarEvents(JSON.stringify(events));
+		const result = parseIcsCalendarString(generateIcsCalendar(calendar));
 
 		// Assert
-		expect(result).toEqual(events);
+		expect(result).toEqual(calendar);
 	});
 });

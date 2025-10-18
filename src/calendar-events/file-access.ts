@@ -2,18 +2,18 @@ import { app } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 
-export const CALENDAR_EVENTS_FILE_NAME = "calendar-events.json";
+export const DEFAULT_CALENDAR_FILE_NAME = "default.ics";
 
 function getCalendarEventsFileFullPath(): string {
-	return path.join(app.getPath("userData"), CALENDAR_EVENTS_FILE_NAME);
+	return path.join(app.getPath("userData"), DEFAULT_CALENDAR_FILE_NAME);
 }
 
-export function readCalendarEventsFile(): Promise<string> {
-	const { promise, resolve } = Promise.withResolvers<string>();
+export function readCalendarFile(): Promise<string | undefined> {
+	const { promise, resolve } = Promise.withResolvers<string | undefined>();
 
 	fs.readFile(getCalendarEventsFileFullPath(), (err, data) => {
 		if (err) {
-			resolve("");
+			resolve(undefined);
 			return;
 		}
 
@@ -22,7 +22,7 @@ export function readCalendarEventsFile(): Promise<string> {
 	return promise;
 }
 
-export function writeCalendarEventsFile(contents: string): Promise<void> {
+export function writeCalendarFile(contents: string): Promise<void> {
 	const { promise, resolve } = Promise.withResolvers<void>();
 	fs.writeFile(getCalendarEventsFileFullPath(), contents, () => {
 		resolve();
