@@ -3,6 +3,11 @@ import { inject, InjectionKey, provide } from "vue";
 import { z } from "zod";
 
 export const userConfig = z.object({
+	version: z.object({
+		major: z.number(),
+		minor: z.number(),
+		patch: z.number(),
+	}),
 	pdfDirectory: z.string().optional(),
 	displayDate: displayDate,
 });
@@ -12,6 +17,7 @@ export type UserConfig = z.infer<typeof userConfig>;
 export function getDefaultUserConfig(): UserConfig {
 	const currentDate = new Date();
 	return {
+		version: { major: 1, minor: 0, patch: 0 },
 		displayDate: {
 			month: currentDate.getMonth(),
 			year: currentDate.getFullYear(),

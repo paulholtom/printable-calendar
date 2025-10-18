@@ -87,12 +87,17 @@ it("creates a new event when the save button is clicked based on values entered"
 
 	// Assert
 	expect(wrapper.queryByRole("dialog")).toBeNull();
-	expect(events.default).toEqual([
-		{
-			year: 2010,
-			month: 4,
-			day: 3,
-			description: enteredDescription,
-		},
-	]);
+	const expectedResult: CalendarEventCollection = {
+		default: [
+			{
+				firstOccurance: {
+					year: 2010,
+					month: 4,
+					date: 3,
+				},
+				description: enteredDescription,
+			},
+		],
+	};
+	expect(events).toEqual(expectedResult);
 });
