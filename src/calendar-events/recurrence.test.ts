@@ -7,44 +7,11 @@ import {
 	IcsCalendarCollection,
 } from "./parsing";
 import {
-	eventAppearsOnDay,
 	EventOccurrence,
 	EventsByDate,
 	getDaysForEventInRange,
 	getEventsByDateFromCalendarCollection,
 } from "./recurrence";
-
-describe(eventAppearsOnDay, () => {
-	it.each<{ date: Date; event: IcsEvent; expectedResult: boolean }>([
-		{
-			date: new Date(Date.UTC(2025, 10, 23)),
-			event: {
-				...getDefaultIcsEvent(),
-				start: { date: new Date(Date.UTC(2025, 10, 23)) },
-			},
-			expectedResult: true,
-		},
-		{
-			date: new Date(Date.UTC(2025, 10, 23)),
-			event: {
-				...getDefaultIcsEvent(),
-				start: { date: new Date(Date.UTC(2025, 10, 25)) },
-			},
-			expectedResult: false,
-		},
-	])(
-		"returns $expectedResult if the date is $date and the event is $event",
-		({ date, event, expectedResult }) => {
-			// Arrange
-
-			// Act
-			const result = eventAppearsOnDay(event, date);
-
-			// Assert
-			expect(result).toBe(expectedResult);
-		},
-	);
-});
 
 describe(getDaysForEventInRange, () => {
 	it.each<{
@@ -134,24 +101,22 @@ describe(getEventsByDateFromCalendarCollection, () => {
 	const RANGE_START = new Date(2025, 5, 5);
 	const RANGE_END = new Date(2025, 5, 10);
 
-	function createExpectedEventsByDate<
-		CalendarCollection extends IcsCalendarCollection,
-	>(options?: {
-		5?: EventOccurrence<CalendarCollection>[];
-		6?: EventOccurrence<CalendarCollection>[];
-		7?: EventOccurrence<CalendarCollection>[];
-		8?: EventOccurrence<CalendarCollection>[];
-		9?: EventOccurrence<CalendarCollection>[];
-		10?: EventOccurrence<CalendarCollection>[];
-	}): EventsByDate<CalendarCollection> {
-		return new Map<number, EventOccurrence<CalendarCollection>[]>([
+	function createExpectedEventsByDate(options?: {
+		5?: EventOccurrence[];
+		6?: EventOccurrence[];
+		7?: EventOccurrence[];
+		8?: EventOccurrence[];
+		9?: EventOccurrence[];
+		10?: EventOccurrence[];
+	}): EventsByDate {
+		return new Map<number, EventOccurrence[]>([
 			[new Date(2025, 5, 5).getTime(), options?.[5] ?? []],
 			[new Date(2025, 5, 6).getTime(), options?.[6] ?? []],
 			[new Date(2025, 5, 7).getTime(), options?.[7] ?? []],
 			[new Date(2025, 5, 8).getTime(), options?.[8] ?? []],
 			[new Date(2025, 5, 9).getTime(), options?.[9] ?? []],
 			[new Date(2025, 5, 10).getTime(), options?.[10] ?? []],
-		] satisfies [number, EventOccurrence<CalendarCollection>[]][]);
+		] satisfies [number, EventOccurrence[]][]);
 	}
 
 	it("gets an empty map of the provided date range if the collection has no events", () => {

@@ -1,10 +1,4 @@
-import {
-	getDefaultIcsCalendar,
-	getDefaultIcsCalendarCollection,
-	getDefaultIcsEvent,
-	ICS_CALENDAR_COLLECTION_KEY,
-	IcsCalendarCollection,
-} from "@/calendar-events";
+import { getDefaultIcsEvent } from "@/calendar-events";
 import { render } from "@testing-library/vue";
 import { IcsEvent } from "ts-ics";
 import { it } from "vitest";
@@ -16,42 +10,27 @@ it("displays the provided day", () => {
 
 	// Act
 	const wrapper = render(CalendarDay, {
-		props: { date, variant: "current-month" },
-		global: {
-			provide: {
-				[ICS_CALENDAR_COLLECTION_KEY]:
-					getDefaultIcsCalendarCollection(),
-			},
-		},
+		props: { date, variant: "current-month", events: undefined },
 	});
 
 	// Assert
 	wrapper.getByText(date.getDate());
 });
 
-it("displays events for the provided day", () => {
+it("displays provided events", () => {
 	// Arrange
 	const date = new Date(2025, 5, 10);
 	const event: IcsEvent = {
 		...getDefaultIcsEvent(),
-		start: { date },
 		summary: "Some Event",
-	};
-	const calendarCollection: IcsCalendarCollection = {
-		...getDefaultIcsCalendarCollection(),
-		default: {
-			...getDefaultIcsCalendar(),
-			events: [event],
-		},
 	};
 
 	// Act
 	const wrapper = render(CalendarDay, {
-		props: { date, variant: "current-month" },
-		global: {
-			provide: {
-				[ICS_CALENDAR_COLLECTION_KEY]: calendarCollection,
-			},
+		props: {
+			date,
+			variant: "current-month",
+			events: [{ date, sourceCalendar: "default", event }],
 		},
 	});
 

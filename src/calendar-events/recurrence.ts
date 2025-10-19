@@ -2,15 +2,6 @@ import { extendByRecurrenceRule, IcsEvent } from "ts-ics";
 import { IcsCalendarCollection } from "./parsing";
 
 /**
- * @param event The event to check.
- * @param date The date to check.
- * @returns If the event should appear on the specified day.
- */
-export function eventAppearsOnDay(event: IcsEvent, date: Date): boolean {
-	return event.start.date.getTime() === date.getTime();
-}
-
-/**
  * @param date The date to check.
  * @param rangeStart The start of the range.
  * @param rangeEnd Then end of the range.
@@ -50,29 +41,27 @@ export function getDaysForEventInRange(
 /**
  * A specific occurrence of an event.
  */
-export type EventOccurrence<CalendarCollection extends IcsCalendarCollection> =
-	{
-		/**
-		 * The date and time of this specific occurence.
-		 */
-		date: Date;
-		/**
-		 * The calendar the event came from.
-		 */
-		sourceCalendar: keyof CalendarCollection;
-		/**
-		 * Details of the event.
-		 */
-		event: IcsEvent;
-	};
+export type EventOccurrence = {
+	/**
+	 * The date and time of this specific occurence.
+	 */
+	date: Date;
+	/**
+	 * The calendar the event came from.
+	 */
+	sourceCalendar: string;
+	/**
+	 * Details of the event.
+	 */
+	event: IcsEvent;
+};
 
 /**
  * Event occurences grouped and sorted by date.
  *
  * The keys are timestamps as dates won't be equal in a map.
  */
-export type EventsByDate<CalendarCollection extends IcsCalendarCollection> =
-	Map<number, EventOccurrence<CalendarCollection>[]>;
+export type EventsByDate = Map<number, EventOccurrence[]>;
 
 export function getEventsByDateFromCalendarCollection<
 	CalendarCollection extends IcsCalendarCollection,
@@ -80,8 +69,8 @@ export function getEventsByDateFromCalendarCollection<
 	collection: CalendarCollection,
 	rangeStart: Date,
 	rangeEnd: Date,
-): EventsByDate<CalendarCollection> {
-	const events: EventsByDate<CalendarCollection> = new Map();
+): EventsByDate {
+	const events: EventsByDate = new Map();
 
 	const dateToAdd = new Date(rangeStart.getTime());
 
@@ -104,7 +93,7 @@ export function getEventsByDateFromCalendarCollection<
 				).getTime();
 				events.get(dateWithoutTime)?.push({
 					date: eventDate,
-					sourceCalendar: calendarName as keyof CalendarCollection,
+					sourceCalendar: calendarName,
 					event,
 				});
 			});

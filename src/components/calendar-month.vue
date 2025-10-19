@@ -15,6 +15,7 @@
 				<CalendarDay
 					:date="date"
 					:variant="getCalendarDayVariant(date)"
+					:events="eventsByDate.get(date.getTime())"
 				/>
 			</li>
 		</ol>
@@ -22,6 +23,11 @@
 </template>
 
 <script setup lang="ts">
+import {
+	EventsByDate,
+	getEventsByDateFromCalendarCollection,
+	useIcsCalendarCollection,
+} from "@/calendar-events";
 import { getDateDisplayValue } from "@/dates";
 import { computed } from "vue";
 import { CalendarDayVariant } from "./calendar-day-variant";
@@ -36,23 +42,42 @@ const props = defineProps<{
 	 * The year.
 	 */
 	year: number;
+	/**
+	 * Events by date provided by a parent component.
+	 */
+	parentEventsByDate?: EventsByDate;
 }>();
+
+const calendarCollection = useIcsCalendarCollection();
 
 const firstOfMonth = computed(() => new Date(props.year, props.month));
 const endOfMonth = computed(() => new Date(props.year, props.month + 1, 0));
+const firstDisplayDate = computed(
+	() => new Date(props.year, props.month, 1 - firstOfMonth.value.getDay()),
+);
+const lastDisplayDate = computed(
+	() => new Date(props.year, props.month + 1, 6 - endOfMonth.value.getDay()),
+);
 
 const datesToDisplay = computed(() => {
 	const dates: Date[] = [];
-	const currentDate = new Date(
-		props.year,
-		props.month,
-		1 - firstOfMonth.value.getDay(),
-	);
-	while (currentDate <= endOfMonth.value || dates.length % 7 !== 0) {
+	const currentDate = new Date(firstDisplayDate.value.getTime());
+	while (currentDate <= lastDisplayDate.value) {
 		dates.push(new Date(currentDate.getTime()));
 		currentDate.setDate(currentDate.getDate() + 1);
 	}
 	return dates;
+});
+
+const eventsByDate = computed(() => {
+	return (
+		props.parentEventsByDate ??
+		getEventsByDateFromCalendarCollection(
+			calendarCollection,
+			firstDisplayDate.value,
+			lastDisplayDate.value,
+		)
+	);
 });
 
 function getCalendarDayVariant(date: Date): CalendarDayVariant {

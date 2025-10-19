@@ -5,19 +5,49 @@
 			:month="month - 1"
 			:year="year"
 			:key="month"
+			:parent-events-by-date="eventsByDate"
 		/>
 	</section>
 </template>
 
 <script setup lang="ts">
+import {
+	getEventsByDateFromCalendarCollection,
+	useIcsCalendarCollection,
+} from "@/calendar-events";
+import { computed } from "vue";
 import CalendarMonth from "./calendar-month.vue";
 
-defineProps<{
+const props = defineProps<{
 	/**
 	 * The year.
 	 */
 	year: number;
 }>();
+
+const calendarCollection = useIcsCalendarCollection();
+
+const firstOfYear = computed(() => new Date(props.year, 0, 1));
+const endOfYear = computed(() => new Date(props.year, 11, 31));
+const firstDisplayDate = computed(
+	() =>
+		new Date(
+			props.year,
+			firstOfYear.value.getMonth(),
+			1 - firstOfYear.value.getDay(),
+		),
+);
+const lastDisplayDate = computed(
+	() => new Date(props.year, 11, 37 - endOfYear.value.getDay()),
+);
+
+const eventsByDate = computed(() => {
+	return getEventsByDateFromCalendarCollection(
+		calendarCollection,
+		firstDisplayDate.value,
+		lastDisplayDate.value,
+	);
+});
 </script>
 
 <style scoped lang="css">
