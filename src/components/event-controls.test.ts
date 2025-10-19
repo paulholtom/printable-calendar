@@ -6,13 +6,12 @@ import {
 	getDefaultIcsEvent,
 } from "@/calendar-events";
 import { fireEvent, render } from "@testing-library/vue";
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import EventControls from "./event-controls.vue";
 
 beforeEach(() => {
 	vi.resetAllMocks();
 	vi.useFakeTimers();
-	vi.setSystemTime(new Date(2010, 5, 7));
 });
 
 afterEach(() => {
@@ -54,25 +53,63 @@ it("displays the dialog if the add button is clicked", async () => {
 	wrapper.getByRole("dialog");
 });
 
-it.each(["Close", "Cancel"])(
-	"closes the dialog without modifying the events when the %s button is clicked",
-	async (buttonName) => {
-		// Arrange
-		const calendar: IcsCalendarCollection =
-			getDefaultIcsCalendarCollection();
-		const wrapper = render(EventControls, {
-			global: { provide: { [ICS_CALENDAR_COLLECTION_KEY]: calendar } },
+describe.each([{ closeButtonName: "Close" }, { closeButtonName: "Cancel" }])(
+	"$closeButtonName button",
+	({ closeButtonName }) => {
+		it("closes the dialog without modifying the events when the %s button is clicked", async () => {
+			// Arrange
+			const calendar: IcsCalendarCollection =
+				getDefaultIcsCalendarCollection();
+			const wrapper = render(EventControls, {
+				global: {
+					provide: { [ICS_CALENDAR_COLLECTION_KEY]: calendar },
+				},
+			});
+			const addButton = wrapper.getByRole("button", {
+				name: "Add Event",
+			});
+			await fireEvent.click(addButton);
+
+			// Act
+			const closeButton = wrapper.getByRole("button", {
+				name: closeButtonName,
+			});
+			await fireEvent.click(closeButton);
+
+			// Assert
+			expect(wrapper.queryByRole("dialog")).toBeNull();
+			expect(calendar.default.events).toBeUndefined();
 		});
-		const addButton = wrapper.getByRole("button", { name: "Add Event" });
-		await fireEvent.click(addButton);
 
-		// Act
-		const closeButton = wrapper.getByRole("button", { name: buttonName });
-		await fireEvent.click(closeButton);
+		it("clears previously entered values if the dialog is closed then opened again", async () => {
+			// Arrange
+			vi.setSystemTime(new Date(2010, 5, 7));
+			const calendar: IcsCalendarCollection =
+				getDefaultIcsCalendarCollection();
+			const wrapper = render(EventControls, {
+				global: {
+					provide: { [ICS_CALENDAR_COLLECTION_KEY]: calendar },
+				},
+			});
+			const addButton = wrapper.getByRole("button", {
+				name: "Add Event",
+			});
+			await fireEvent.click(addButton);
 
-		// Assert
-		expect(wrapper.queryByRole("dialog")).toBeNull();
-		expect(calendar.default.events).toBeUndefined();
+			// Act
+			const dateInput = wrapper.getByLabelText("Date");
+			await fireEvent.update(dateInput, "2010-05-03");
+			const closeButton = wrapper.getByRole("button", {
+				name: closeButtonName,
+			});
+			await fireEvent.click(closeButton);
+			await fireEvent.click(addButton);
+
+			// Assert
+			expect(wrapper.getByLabelText<HTMLInputElement>("Date").value).toBe(
+				"2010-06-07",
+			);
+		});
 	},
 );
 

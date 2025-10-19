@@ -28,7 +28,7 @@ import {
 	getDefaultIcsEvent,
 	useIcsCalendarCollection,
 } from "@/calendar-events";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import DialogLayout from "./dialog-layout.vue";
 
 const calendar = useIcsCalendarCollection();
@@ -62,5 +62,18 @@ function parseDate(): Date {
 		parseInt(date.value.substring(5, 7)) - 1,
 		parseInt(date.value.substring(8, 10)),
 	);
+}
+
+watch(dialogOpen, (newValue) => {
+	if (!newValue) {
+		clear();
+	}
+});
+
+function clear(): void {
+	const defaultDate = new Date();
+	date.value = `${defaultDate.getFullYear()}-${(defaultDate.getMonth() + 1).toString().padStart(2, "0")}-${defaultDate.getDate().toString().padStart(2, "0")}`;
+
+	summary.value = "";
 }
 </script>
