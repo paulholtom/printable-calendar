@@ -92,7 +92,7 @@ it("toggles visiblity reactively", async () => {
 	expect(wrapper.queryByText(slotContent)).toBeNull();
 });
 
-it("emits a change to the isOpen prop when the close button is clicked", async () => {
+it("emits a change to the isOpen prop and a close event when the close button is clicked", async () => {
 	// Arrange
 	let isOpen = true;
 	const wrapper = render(DialogLayout, {
@@ -111,4 +111,5 @@ it("emits a change to the isOpen prop when the close button is clicked", async (
 
 	// Assert
 	expect(isOpen).toBe(false);
+	expect(wrapper.emitted("close")).toEqual([[]]);
 });

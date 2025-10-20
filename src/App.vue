@@ -8,17 +8,23 @@
 		</template>
 		<template v-else-if="allReady">
 			<nav class="controls">
+				<EventEditDialog ref="eventEditDialog" />
 				<PrintControls />
 				<NavigationControls />
-				<EventControls />
+				<button @click="addEvent()">Add Event</button>
 			</nav>
 			<main class="calendar-display">
 				<CalendarMonth
 					v-if="configFile.displayDate.month !== undefined"
 					:year="configFile.displayDate.year"
 					:month="configFile.displayDate.month"
+					@event-clicked="editEvent"
 				/>
-				<CalendarYear v-else :year="configFile.displayDate.year" />
+				<CalendarYear
+					v-else
+					:year="configFile.displayDate.year"
+					@event-clicked="editEvent"
+				/>
 			</main>
 		</template>
 		<p role="progressbar" v-else>Loading...</p>
@@ -27,8 +33,9 @@
 
 <script setup lang="ts">
 import { generateIcsCalendar } from "ts-ics";
-import { computed, reactive, ref, watch } from "vue";
+import { computed, reactive, ref, useTemplateRef, watch } from "vue";
 import {
+	EventOccurrence,
 	getDefaultIcsCalendarCollection,
 	IcsCalendarCollection,
 	parseIcsCalendarString,
@@ -36,7 +43,8 @@ import {
 } from "./calendar-events";
 import CalendarMonth from "./components/calendar-month.vue";
 import CalendarYear from "./components/calendar-year.vue";
-import EventControls from "./components/event-controls.vue";
+import { EVENT_EDIT_DIALOG_ACTION } from "./components/event-edit-dialog-result";
+import EventEditDialog from "./components/event-edit-dialog.vue";
 import NavigationControls from "./components/navigation-controls.vue";
 import PrintControls from "./components/print-controls.vue";
 import {
@@ -47,6 +55,7 @@ import {
 } from "./user-config";
 
 const errors = ref<unknown[]>([]);
+const eventEditDialog = useTemplateRef("eventEditDialog");
 
 const configFileLoaded = ref(false);
 const configFile = reactive<UserConfig>(getDefaultUserConfig());
@@ -95,6 +104,46 @@ provideIcsCalendarCollection(icsCalendarCollection);
 const allReady = computed(
 	() => configFileLoaded.value && calendarFileLoaded.value,
 );
+
+async function addEvent() {
+	const result = await eventEditDialog.value?.createNewEvent();
+
+	if (result?.action === EVENT_EDIT_DIALOG_ACTION.SAVE) {
+		if (!icsCalendarCollection.default.events) {
+			icsCalendarCollection.default.events = [];
+		}
+
+		icsCalendarCollection.default.events.push(result.event);
+	}
+}
+
+async function editEvent(event: EventOccurrence) {
+	const calendar = icsCalendarCollection[event.sourceCalendar];
+	const foundEvent = calendar?.events?.find(
+		(eventSearch) => eventSearch.uid === event.event.uid,
+	);
+	if (
+		calendar === undefined ||
+		calendar.events === undefined ||
+		foundEvent === undefined
+	) {
+		errors.value.push("Could not find event to edit.");
+		return;
+	}
+
+	const result = await eventEditDialog.value?.updateEvent(foundEvent);
+
+	switch (result?.action) {
+		case EVENT_EDIT_DIALOG_ACTION.SAVE:
+			Object.assign(foundEvent, result.event);
+			break;
+		case EVENT_EDIT_DIALOG_ACTION.DELETE:
+			calendar.events = calendar.events.filter(
+				(eventSearch) => eventSearch.uid !== event.event.uid,
+			);
+			break;
+	}
+}
 </script>
 
 <style lang="css" scoped>

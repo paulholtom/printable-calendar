@@ -1,10 +1,13 @@
 import {
+	EventOccurrence,
 	ICS_CALENDAR_COLLECTION_KEY,
 	getDefaultIcsCalendarCollection,
+	getDefaultIcsEvent,
 	getEventsByDateFromCalendarCollection,
 } from "@/calendar-events";
 import { getDateDisplayValue } from "@/dates";
-import { render } from "@testing-library/vue";
+import { fireEvent, render } from "@testing-library/vue";
+import { IcsEvent } from "ts-ics";
 import { beforeEach, expect, it, vi } from "vitest";
 import CalendarMonth from "./calendar-month.vue";
 
@@ -16,7 +19,7 @@ beforeEach(() => {
 
 it("displays the provided month", () => {
 	// Arrange
-	const month = 5;
+	const month = 8;
 	const year = 2025;
 
 	// Act
@@ -76,4 +79,37 @@ it("does not recalculate the events if they were provided", () => {
 
 	// Assert
 	expect(getEventsByDateFromCalendarCollection).not.toHaveBeenCalled();
+});
+
+it("emits if an event was clicked", async () => {
+	// Arrange
+	const month = 5;
+	const year = 2025;
+	const calendarCollection = getDefaultIcsCalendarCollection();
+	const event: IcsEvent = {
+		...getDefaultIcsEvent(),
+		start: { date: new Date(2025, 5, 3) },
+		summary: "My Event",
+	};
+	calendarCollection.default.events = [event];
+
+	// Act
+	const wrapper = render(CalendarMonth, {
+		props: { year, month },
+		global: {
+			provide: {
+				[ICS_CALENDAR_COLLECTION_KEY]: calendarCollection,
+			},
+		},
+	});
+	const eventDisplay = wrapper.getByText(event.summary);
+	await fireEvent.click(eventDisplay);
+
+	// Assert
+	const expectedResult: EventOccurrence = {
+		date: event.start.date,
+		sourceCalendar: "default",
+		event,
+	};
+	expect(wrapper.emitted("eventClicked")).toEqual([[expectedResult]]);
 });

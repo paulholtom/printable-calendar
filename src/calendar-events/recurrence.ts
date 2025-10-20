@@ -80,7 +80,7 @@ export function getEventsByDateFromCalendarCollection<
 	}
 
 	for (const [calendarName, calendar] of Object.entries(collection)) {
-		calendar.events?.forEach((event) => {
+		calendar?.events?.forEach((event) => {
 			const datesOfEvent = getDaysForEventInRange(
 				event,
 				rangeStart,

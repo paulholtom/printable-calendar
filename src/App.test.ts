@@ -5,7 +5,7 @@ import {
 	IcsCalendarCollection,
 	provideIcsCalendarCollection,
 } from "@/calendar-events";
-import { render } from "@testing-library/vue";
+import { fireEvent, render, RenderResult, within } from "@testing-library/vue";
 import { generateIcsCalendar, IcsCalendar } from "ts-ics";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
@@ -35,6 +35,7 @@ beforeEach(() => {
 
 	window.electronApi = mockElectronApi;
 	window.alert = vi.fn();
+	window.confirm = vi.fn();
 });
 
 function createFilePromises(fileContents?: {
@@ -70,6 +71,10 @@ function createFilePromises(fileContents?: {
 	return [configFilePromise, defaultCalendarFilePromise];
 }
 
+function getProvidedCalendarCollection() {
+	return vi.mocked(provideIcsCalendarCollection).mock.calls[0][0];
+}
+
 it("displays a progress bar until the files are loaded", async () => {
 	// Arrange
 	const filePromises = createFilePromises();
@@ -81,6 +86,18 @@ it("displays a progress bar until the files are loaded", async () => {
 	wrapper.getByRole("progressbar");
 	await filePromises;
 	expect(wrapper.queryByRole("progressbar")).toBeNull();
+});
+
+it("does not initially display any dialogs", async () => {
+	// Arrange
+	const filePromises = createFilePromises();
+
+	// Act
+	const wrapper = render(App);
+	await Promise.all(filePromises);
+
+	// Assert
+	expect(wrapper.queryByRole("dialog")).toBeNull();
 });
 
 describe("configFile", () => {
@@ -174,9 +191,7 @@ describe("calendarEventsFile", () => {
 		await Promise.all(filePromises);
 
 		// Act
-		const providedCalendarCollection = vi.mocked(
-			provideIcsCalendarCollection,
-		).mock.calls[0][0];
+		const providedCalendarCollection = getProvidedCalendarCollection();
 		providedCalendarCollection.default.events = [];
 		providedCalendarCollection.default.events.push(newEvent);
 		await nextTick();
@@ -222,5 +237,169 @@ describe("calendar display", () => {
 
 		// Assert
 		expect(wrapper.getAllByRole("grid").length).toBe(12);
+	});
+});
+
+describe("event editing", () => {
+	it("displays the event editing dialog if the add event button is clicked", async () => {
+		// Arrange
+		const filePromises = createFilePromises();
+		const wrapper = render(App);
+		await Promise.all(filePromises);
+
+		// Act
+		const addButton = wrapper.getByRole("button", { name: "Add Event" });
+		await fireEvent.click(addButton);
+
+		// Assert
+		wrapper.getByRole("dialog");
+	});
+
+	it("saves an event created through the dialog", async () => {
+		// Arrange
+		const newEventSummary = "My shiny new event";
+		const filePromises = createFilePromises();
+		const wrapper = render(App);
+		await Promise.all(filePromises);
+		const addButton = wrapper.getByRole("button", { name: "Add Event" });
+		await fireEvent.click(addButton);
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+		const dateInput = within(dialog).getByLabelText("Date");
+		await fireEvent.update(dateInput, "2010-05-03");
+		const summaryInput = within(dialog).getByLabelText("Summary");
+		await fireEvent.update(summaryInput, newEventSummary);
+		const saveButton = within(dialog).getByRole("button", { name: "Save" });
+		await fireEvent.click(saveButton);
+
+		// Assert
+		const collection = getProvidedCalendarCollection();
+		expect(collection.default.events).toEqual([
+			expect.objectContaining({
+				summary: newEventSummary,
+				start: { date: new Date(2010, 4, 3) },
+			}),
+		]);
+	});
+
+	it.each([{ buttonName: "Cancel" }, { buttonName: "Close" }])(
+		"does not create a new event if the $buttonName button is clicked",
+		async ({ buttonName }) => {
+			// Arrange
+			const filePromises = createFilePromises();
+			const wrapper = render(App);
+			await Promise.all(filePromises);
+			const addButton = wrapper.getByRole("button", {
+				name: "Add Event",
+			});
+			await fireEvent.click(addButton);
+
+			// Act
+			const dialog = wrapper.getByRole("dialog");
+			const saveButton = within(dialog).getByRole("button", {
+				name: buttonName,
+			});
+			await fireEvent.click(saveButton);
+
+			// Assert
+			const collection = getProvidedCalendarCollection();
+			expect(collection.default.events).toBeUndefined();
+		},
+	);
+
+	async function renderAppWithClickableEvent(
+		eventSummary: string,
+	): Promise<RenderResult> {
+		const userConfig: UserConfig = getDefaultUserConfig();
+		userConfig.displayDate.month = 5;
+		userConfig.displayDate.year = 2025;
+		const defaultCalendar = getDefaultIcsCalendar();
+		defaultCalendar.events = [
+			{
+				...getDefaultIcsEvent(),
+				start: { date: new Date(2025, 5, 6) },
+				summary: eventSummary,
+			},
+		];
+		const filePromises = createFilePromises({
+			userConfig,
+			defaultCalendar,
+		});
+		const wrapper = render(App);
+		await Promise.all(filePromises);
+
+		return wrapper;
+	}
+
+	it("displays the event editing dialog when an event is clicked", async () => {
+		// Arrange
+		const eventSummary = "My Event";
+		const wrapper = await renderAppWithClickableEvent(eventSummary);
+
+		// Act
+		const eventDisplay = wrapper.getByText(eventSummary);
+		await fireEvent.click(eventDisplay);
+
+		// Assert
+		wrapper.getByRole("dialog");
+	});
+
+	it("displays an error if an event is clicked but that event can't be found", async () => {
+		// Arrange
+		const eventSummary = "My Event";
+		const wrapper = await renderAppWithClickableEvent(eventSummary);
+
+		// Act
+		const calendarCollection = getProvidedCalendarCollection();
+		calendarCollection.default.events = [];
+		const eventDisplay = wrapper.getByText(eventSummary);
+		await fireEvent.click(eventDisplay);
+
+		// Assert
+		wrapper.getByText("Could not find event to edit.");
+	});
+
+	it("deletes an event if the delete button is clicked", async () => {
+		// Arrange
+		const eventSummary = "My Event";
+		const wrapper = await renderAppWithClickableEvent(eventSummary);
+		const calendarCollection = getProvidedCalendarCollection();
+		vi.mocked(window.confirm).mockRejectedValueOnce(true);
+
+		// Act
+		const eventDisplay = wrapper.getByText(eventSummary);
+		await fireEvent.click(eventDisplay);
+		const dialog = wrapper.getByRole("dialog");
+		const deleteButton = within(dialog).getByRole("button", {
+			name: "Delete",
+		});
+		await fireEvent.click(deleteButton);
+
+		// Assert
+		expect(calendarCollection.default.events).toEqual([]);
+	});
+
+	it("updates an event if the save button is clicked", async () => {
+		// Arrange
+		const originalEventSummary = "My Event";
+		const newEventSummary = "My shiny new event";
+		const wrapper = await renderAppWithClickableEvent(originalEventSummary);
+		const calendarCollection = getProvidedCalendarCollection();
+		vi.mocked(window.confirm).mockRejectedValueOnce(true);
+
+		// Act
+		const eventDisplay = wrapper.getByText(originalEventSummary);
+		await fireEvent.click(eventDisplay);
+		const dialog = wrapper.getByRole("dialog");
+		const summaryInput = within(dialog).getByLabelText("Summary");
+		await fireEvent.update(summaryInput, newEventSummary);
+		const saveButton = within(dialog).getByRole("button", { name: "Save" });
+		await fireEvent.click(saveButton);
+
+		// Assert
+		expect(calendarCollection.default.events?.[0].summary).toEqual(
+			newEventSummary,
+		);
 	});
 });

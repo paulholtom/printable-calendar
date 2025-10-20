@@ -16,6 +16,7 @@
 					:date="date"
 					:variant="getCalendarDayVariant(date)"
 					:events="eventsByDate.get(date.getTime())"
+					@event-clicked="(event) => $emit('eventClicked', event)"
 				/>
 			</li>
 		</ol>
@@ -24,6 +25,7 @@
 
 <script setup lang="ts">
 import {
+	EventOccurrence,
 	EventsByDate,
 	getEventsByDateFromCalendarCollection,
 	useIcsCalendarCollection,
@@ -32,6 +34,8 @@ import { getDateDisplayValue } from "@/dates";
 import { computed } from "vue";
 import { CalendarDayVariant } from "./calendar-day-variant";
 import CalendarDay from "./calendar-day.vue";
+
+defineEmits<{ eventClicked: [event: EventOccurrence] }>();
 
 const props = defineProps<{
 	/**

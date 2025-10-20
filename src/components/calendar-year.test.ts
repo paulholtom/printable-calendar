@@ -1,9 +1,12 @@
 import {
+	EventOccurrence,
 	ICS_CALENDAR_COLLECTION_KEY,
 	getDefaultIcsCalendarCollection,
+	getDefaultIcsEvent,
 	getEventsByDateFromCalendarCollection,
 } from "@/calendar-events";
-import { render } from "@testing-library/vue";
+import { fireEvent, render } from "@testing-library/vue";
+import { IcsEvent } from "ts-ics";
 import { beforeEach, expect, it, vi } from "vitest";
 import CalendarYear from "./calendar-year.vue";
 
@@ -53,4 +56,36 @@ it("gets the events for the month if they were not provided", () => {
 		new Date(2024, 11, 29),
 		new Date(2026, 0, 3),
 	);
+});
+
+it("emits if an event was clicked", async () => {
+	// Arrange
+	const year = 2025;
+	const calendarCollection = getDefaultIcsCalendarCollection();
+	const event: IcsEvent = {
+		...getDefaultIcsEvent(),
+		start: { date: new Date(2025, 5, 3) },
+		summary: "My Event",
+	};
+	calendarCollection.default.events = [event];
+
+	// Act
+	const wrapper = render(CalendarYear, {
+		props: { year },
+		global: {
+			provide: {
+				[ICS_CALENDAR_COLLECTION_KEY]: calendarCollection,
+			},
+		},
+	});
+	const eventDisplay = wrapper.getByText(event.summary);
+	await fireEvent.click(eventDisplay);
+
+	// Assert
+	const expectedResult: EventOccurrence = {
+		date: event.start.date,
+		sourceCalendar: "default",
+		event,
+	};
+	expect(wrapper.emitted("eventClicked")).toEqual([[expectedResult]]);
 });

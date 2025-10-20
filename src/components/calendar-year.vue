@@ -6,17 +6,21 @@
 			:year="year"
 			:key="month"
 			:parent-events-by-date="eventsByDate"
+			@event-clicked="(event) => $emit('eventClicked', event)"
 		/>
 	</section>
 </template>
 
 <script setup lang="ts">
 import {
+	EventOccurrence,
 	getEventsByDateFromCalendarCollection,
 	useIcsCalendarCollection,
 } from "@/calendar-events";
 import { computed } from "vue";
 import CalendarMonth from "./calendar-month.vue";
+
+defineEmits<{ eventClicked: [event: EventOccurrence] }>();
 
 const props = defineProps<{
 	/**

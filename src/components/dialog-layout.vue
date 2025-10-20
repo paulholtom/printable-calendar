@@ -32,8 +32,11 @@ defineProps<{
 	title: string;
 }>();
 
+const emit = defineEmits<{ close: [] }>();
+
 function close() {
 	isOpen.value = false;
+	emit("close");
 }
 </script>
 

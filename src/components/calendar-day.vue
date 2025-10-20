@@ -2,8 +2,10 @@
 	<section class="calendar-day" :class="[variant]">
 		<header class="date-display">{{ date.getDate() }}</header>
 		<p
+			class="event"
 			v-for="event in events"
 			:key="event.date.getTime() + event.event.uid"
+			@click="$emit('eventClicked', event)"
 		>
 			{{ event.event.summary }}
 		</p>
@@ -28,6 +30,8 @@ defineProps<{
 	 */
 	events: EventOccurrence[] | undefined;
 }>();
+
+defineEmits<{ eventClicked: [event: EventOccurrence] }>();
 </script>
 
 <style lang="css" scoped>
@@ -38,5 +42,9 @@ defineProps<{
 .previous-month,
 .next-month {
 	opacity: 0.5;
+}
+
+.event {
+	cursor: pointer;
 }
 </style>
