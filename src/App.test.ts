@@ -413,6 +413,31 @@ describe("event editing", () => {
 		);
 	});
 
+	it("does not update the original event if cancel is clicked", async () => {
+		// Arrange
+		const originalEventSummary = "My Event";
+		const newEventSummary = "My shiny new event";
+		const wrapper = await renderAppWithClickableEvent(originalEventSummary);
+		const calendarCollection = getProvidedCalendarCollection();
+		vi.mocked(window.confirm).mockRejectedValueOnce(true);
+
+		// Act
+		const eventDisplay = wrapper.getByText(originalEventSummary);
+		await fireEvent.click(eventDisplay);
+		const dialog = wrapper.getByRole("dialog");
+		const summaryInput = within(dialog).getByLabelText("Summary");
+		await fireEvent.update(summaryInput, newEventSummary);
+		const cancelButton = within(dialog).getByRole("button", {
+			name: "Cancel",
+		});
+		await fireEvent.click(cancelButton);
+
+		// Assert
+		expect(calendarCollection.default.events?.[0].summary).toEqual(
+			originalEventSummary,
+		);
+	});
+
 	it("creates a recurrance rule if the frequency is set", async () => {
 		// Arrange
 		const originalEventSummary = "My Event";

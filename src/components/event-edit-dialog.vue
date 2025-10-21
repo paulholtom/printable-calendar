@@ -137,7 +137,7 @@ function createNewEvent(): Promise<EventEditDialogResult> {
  * @returns Promise that resolves with the details of the user's actions in the dialog.
  */
 function updateEvent(event: IcsEvent): Promise<EventEditDialogResult> {
-	eventModel.value = event;
+	eventModel.value = structuredClone(toRaw(event));
 
 	const { resolve, promise } = Promise.withResolvers<EventEditDialogResult>();
 	promiseResolver = resolve;
