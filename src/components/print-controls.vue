@@ -14,19 +14,20 @@ import { useUserConfig } from "@/user-config";
 const configFile = useUserConfig();
 
 async function printPdf(): Promise<void> {
-	if (!configFile.pdfDirectory) {
+	if (!configFile.value.pdfDirectory) {
 		await choosePdfDirectory();
 	}
-	if (!configFile.pdfDirectory) {
+	if (!configFile.value.pdfDirectory) {
 		return;
 	}
-	const filename = `${configFile.pdfDirectory}\\${getDateDisplayValue(configFile.displayDate)}.pdf`;
+	const filename = `${configFile.value.pdfDirectory}\\${getDateDisplayValue(configFile.value.displayDate)}.pdf`;
 	const finalFileName = await window.electronApi.printToPdf(filename);
 	alert(`PDF file created: ${finalFileName}`);
 }
 
 async function choosePdfDirectory(): Promise<void> {
-	configFile.pdfDirectory =
-		(await window.electronApi.selectDirectory()) ?? configFile.pdfDirectory;
+	configFile.value.pdfDirectory =
+		(await window.electronApi.selectDirectory()) ??
+		configFile.value.pdfDirectory;
 }
 </script>

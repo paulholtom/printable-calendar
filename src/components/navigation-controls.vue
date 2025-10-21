@@ -31,24 +31,24 @@ for (let i = 0; i < 12; i++) {
 }
 
 function previous() {
-	if (configFile.displayDate.month === undefined) {
-		configFile.displayDate.year--;
-	} else if (configFile.displayDate.month === 0) {
-		configFile.displayDate.month = 11;
-		configFile.displayDate.year--;
+	if (configFile.value.displayDate.month === undefined) {
+		configFile.value.displayDate.year--;
+	} else if (configFile.value.displayDate.month === 0) {
+		configFile.value.displayDate.month = 11;
+		configFile.value.displayDate.year--;
 	} else {
-		configFile.displayDate.month--;
+		configFile.value.displayDate.month--;
 	}
 }
 
 function next() {
-	if (configFile.displayDate.month === undefined) {
-		configFile.displayDate.year++;
-	} else if (configFile.displayDate.month === 11) {
-		configFile.displayDate.month = 0;
-		configFile.displayDate.year++;
+	if (configFile.value.displayDate.month === undefined) {
+		configFile.value.displayDate.year++;
+	} else if (configFile.value.displayDate.month === 11) {
+		configFile.value.displayDate.month = 0;
+		configFile.value.displayDate.year++;
 	} else {
-		configFile.displayDate.month++;
+		configFile.value.displayDate.month++;
 	}
 }
 </script>

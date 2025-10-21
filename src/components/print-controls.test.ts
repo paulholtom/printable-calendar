@@ -7,7 +7,7 @@ import {
 } from "@/user-config";
 import { fireEvent, render } from "@testing-library/vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { nextTick } from "vue";
+import { nextTick, ref } from "vue";
 import PrintControls from "./print-controls.vue";
 
 const mockElectronApi = {
@@ -34,7 +34,7 @@ describe("select PDF directory", () => {
 		mockElectronApi.selectDirectory.mockResolvedValueOnce(
 			selectedDirectory,
 		);
-		const userConfig: UserConfig = getDefaultUserConfig();
+		const userConfig = ref(getDefaultUserConfig());
 		const wrapper = render(PrintControls, {
 			global: { provide: { [USER_CONFIG_KEY]: userConfig } },
 		});
@@ -46,7 +46,7 @@ describe("select PDF directory", () => {
 		await fireEvent.click(selectDirectoryButton);
 
 		// Assert
-		expect(userConfig.pdfDirectory).toBe(selectedDirectory);
+		expect(userConfig.value.pdfDirectory).toBe(selectedDirectory);
 	});
 });
 
@@ -54,7 +54,9 @@ describe("Print PDF", () => {
 	it("doesn't print if no folder is provided", async () => {
 		// Arrange
 		const wrapper = render(PrintControls, {
-			global: { provide: { [USER_CONFIG_KEY]: getDefaultUserConfig() } },
+			global: {
+				provide: { [USER_CONFIG_KEY]: ref(getDefaultUserConfig()) },
+			},
 		});
 
 		// Act
@@ -70,16 +72,16 @@ describe("Print PDF", () => {
 	it("writes to the path from the user config if one was loaded", async () => {
 		// Arrange
 		const pdfDirectory = "directory-from-config";
-		const userConfig: UserConfig = {
+		const userConfig = ref<UserConfig>({
 			...getDefaultUserConfig(),
 			pdfDirectory,
 			displayDate: {
 				month: 4,
 				year: 2010,
 			},
-		};
+		});
 		mockElectronApi.printToPdf.mockImplementation((path) => path);
-		const expectedPath = `${pdfDirectory}\\${getDateDisplayValue(userConfig.displayDate)}.pdf`;
+		const expectedPath = `${pdfDirectory}\\${getDateDisplayValue(userConfig.value.displayDate)}.pdf`;
 		const wrapper = render(PrintControls, {
 			global: { provide: { [USER_CONFIG_KEY]: userConfig } },
 		});
@@ -101,9 +103,9 @@ describe("Print PDF", () => {
 	it("prompts for a directory to be selected if there isn't already one", async () => {
 		// Arrange
 		const pdfDirectory = "selected-directory";
-		const userConfig = getDefaultUserConfig();
+		const userConfig = ref(getDefaultUserConfig());
 		mockElectronApi.selectDirectory.mockResolvedValueOnce(pdfDirectory);
-		const expectedPath = `${pdfDirectory}\\${getDateDisplayValue(userConfig.displayDate)}.pdf`;
+		const expectedPath = `${pdfDirectory}\\${getDateDisplayValue(userConfig.value.displayDate)}.pdf`;
 		const wrapper = render(PrintControls, {
 			global: { provide: { [USER_CONFIG_KEY]: userConfig } },
 		});

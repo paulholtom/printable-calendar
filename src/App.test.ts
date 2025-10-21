@@ -6,7 +6,12 @@ import {
 	provideIcsCalendarCollection,
 } from "@/calendar-events";
 import { fireEvent, render, RenderResult, within } from "@testing-library/vue";
-import { generateIcsCalendar, IcsCalendar } from "ts-ics";
+import {
+	generateIcsCalendar,
+	IcsCalendar,
+	IcsEvent,
+	IcsRecurrenceRule,
+} from "ts-ics";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 import App from "./App.vue";
@@ -115,9 +120,12 @@ describe("configFile", () => {
 		// wait for the files to be read.
 		await Promise.all(filePromises);
 
-		// Assert
+		// // Assert
 		expect(mockElectronApi.writeUserConfigFile).not.toHaveBeenCalled();
-		expect(provideUserConfig).toHaveBeenCalledWith(userConfig);
+		// There's no good way to compare the provided ref with any expected value, so check the value of the provided ref.
+		expect(vi.mocked(provideUserConfig).mock.calls[0][0].value).toEqual(
+			userConfig,
+		);
 	});
 
 	it("saves changes made to the user config", async () => {
@@ -130,7 +138,7 @@ describe("configFile", () => {
 
 		// Act
 		const providedConfig = vi.mocked(provideUserConfig).mock.calls[0][0];
-		providedConfig.pdfDirectory = pdfDirectory;
+		providedConfig.value.pdfDirectory = pdfDirectory;
 		await nextTick();
 
 		// Assert
@@ -278,7 +286,7 @@ describe("event editing", () => {
 		expect(collection.default.events).toEqual([
 			expect.objectContaining({
 				summary: newEventSummary,
-				start: { date: new Date(2010, 4, 3) },
+				start: expect.objectContaining({ date: new Date(2010, 4, 3) }),
 			}),
 		]);
 	});
@@ -309,18 +317,20 @@ describe("event editing", () => {
 	);
 
 	async function renderAppWithClickableEvent(
-		eventSummary: string,
+		eventOrSummary: IcsEvent | string,
 	): Promise<RenderResult> {
 		const userConfig: UserConfig = getDefaultUserConfig();
 		userConfig.displayDate.month = 5;
 		userConfig.displayDate.year = 2025;
 		const defaultCalendar = getDefaultIcsCalendar();
 		defaultCalendar.events = [
-			{
-				...getDefaultIcsEvent(),
-				start: { date: new Date(2025, 5, 6) },
-				summary: eventSummary,
-			},
+			typeof eventOrSummary == "string"
+				? {
+						...getDefaultIcsEvent(),
+						start: { date: new Date(2025, 5, 6) },
+						summary: eventOrSummary,
+					}
+				: { ...eventOrSummary, start: { date: new Date(2025, 5, 6) } },
 		];
 		const filePromises = createFilePromises({
 			userConfig,
@@ -400,6 +410,86 @@ describe("event editing", () => {
 		// Assert
 		expect(calendarCollection.default.events?.[0].summary).toEqual(
 			newEventSummary,
+		);
+	});
+
+	it("creates a recurrance rule if the frequency is set", async () => {
+		// Arrange
+		const originalEventSummary = "My Event";
+		const wrapper = await renderAppWithClickableEvent(originalEventSummary);
+		const calendarCollection = getProvidedCalendarCollection();
+		vi.mocked(window.confirm).mockRejectedValueOnce(true);
+
+		// Act
+		const eventDisplay = wrapper.getByText(originalEventSummary);
+		await fireEvent.click(eventDisplay);
+		const dialog = wrapper.getByRole("dialog");
+		const frequencyInput = within(dialog).getByLabelText("Repeats");
+		await fireEvent.update(frequencyInput, "DAILY");
+		const saveButton = within(dialog).getByRole("button", { name: "Save" });
+		await fireEvent.click(saveButton);
+
+		// Assert
+		const expectedResult: IcsRecurrenceRule = {
+			frequency: "DAILY",
+		};
+		expect(calendarCollection.default.events?.[0].recurrenceRule).toEqual(
+			expectedResult,
+		);
+	});
+
+	it("removes recurrance rule if the frequency changed to undefined", async () => {
+		// Arrange
+		const originalEventSummary = "My Event";
+		const wrapper = await renderAppWithClickableEvent({
+			...getDefaultIcsEvent(),
+			summary: originalEventSummary,
+			recurrenceRule: { frequency: "MONTHLY" },
+		});
+		const calendarCollection = getProvidedCalendarCollection();
+		vi.mocked(window.confirm).mockRejectedValueOnce(true);
+
+		// Act
+		const eventDisplay = wrapper.getByText(originalEventSummary);
+		await fireEvent.click(eventDisplay);
+		const dialog = wrapper.getByRole("dialog");
+		const frequencyInput = within(dialog).getByLabelText("Repeats");
+		await fireEvent.update(frequencyInput, undefined);
+		const saveButton = within(dialog).getByRole("button", { name: "Save" });
+		await fireEvent.click(saveButton);
+
+		// Assert
+		expect(
+			calendarCollection.default.events?.[0].recurrenceRule,
+		).toBeUndefined();
+	});
+
+	it("updates the recurrence frequency from one value to another", async () => {
+		// Arrange
+		const originalEventSummary = "My Event";
+		const wrapper = await renderAppWithClickableEvent({
+			...getDefaultIcsEvent(),
+			summary: originalEventSummary,
+			recurrenceRule: { frequency: "MONTHLY" },
+		});
+		const calendarCollection = getProvidedCalendarCollection();
+		vi.mocked(window.confirm).mockRejectedValueOnce(true);
+
+		// Act
+		const eventDisplay = wrapper.getByText(originalEventSummary);
+		await fireEvent.click(eventDisplay);
+		const dialog = wrapper.getByRole("dialog");
+		const frequencyInput = within(dialog).getByLabelText("Repeats");
+		await fireEvent.update(frequencyInput, "YEARLY");
+		const saveButton = within(dialog).getByRole("button", { name: "Save" });
+		await fireEvent.click(saveButton);
+
+		// Assert
+		const expectedResult: IcsRecurrenceRule = {
+			frequency: "YEARLY",
+		};
+		expect(calendarCollection.default.events?.[0].recurrenceRule).toEqual(
+			expectedResult,
 		);
 	});
 });

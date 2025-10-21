@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import { generateIcsCalendar } from "ts-ics";
-import { computed, reactive, ref, useTemplateRef, watch } from "vue";
+import { computed, reactive, ref, toRaw, useTemplateRef, watch } from "vue";
 import {
 	EventOccurrence,
 	getDefaultIcsCalendarCollection,
@@ -58,18 +58,22 @@ const errors = ref<unknown[]>([]);
 const eventEditDialog = useTemplateRef("eventEditDialog");
 
 const configFileLoaded = ref(false);
-const configFile = reactive<UserConfig>(getDefaultUserConfig());
+const configFile = ref<UserConfig>(getDefaultUserConfig());
 async function setupConfig(): Promise<void> {
-	Object.assign(
-		configFile,
-		parseUserConfig(await window.electronApi.readUserConfigFile()),
+	configFile.value = parseUserConfig(
+		await window.electronApi.readUserConfigFile(),
 	);
-
 	configFileLoaded.value = true;
 
-	watch(configFile, (newValue) => {
-		window.electronApi.writeUserConfigFile(JSON.stringify(newValue));
-	});
+	watch(
+		configFile,
+		(newValue) => {
+			window.electronApi.writeUserConfigFile(
+				JSON.stringify(toRaw(newValue)),
+			);
+		},
+		{ deep: true },
+	);
 }
 setupConfig();
 provideUserConfig(configFile);
@@ -119,28 +123,29 @@ async function addEvent() {
 
 async function editEvent(event: EventOccurrence) {
 	const calendar = icsCalendarCollection[event.sourceCalendar];
-	const foundEvent = calendar?.events?.find(
+	const foundIndex = calendar?.events?.findIndex(
 		(eventSearch) => eventSearch.uid === event.event.uid,
 	);
 	if (
 		calendar === undefined ||
 		calendar.events === undefined ||
-		foundEvent === undefined
+		foundIndex === undefined ||
+		foundIndex < 0
 	) {
 		errors.value.push("Could not find event to edit.");
 		return;
 	}
 
-	const result = await eventEditDialog.value?.updateEvent(foundEvent);
+	const result = await eventEditDialog.value?.updateEvent(
+		calendar.events[foundIndex],
+	);
 
 	switch (result?.action) {
 		case EVENT_EDIT_DIALOG_ACTION.SAVE:
-			Object.assign(foundEvent, result.event);
+			calendar.events[foundIndex] = result.event;
 			break;
 		case EVENT_EDIT_DIALOG_ACTION.DELETE:
-			calendar.events = calendar.events.filter(
-				(eventSearch) => eventSearch.uid !== event.event.uid,
-			);
+			calendar.events.splice(foundIndex, 1);
 			break;
 	}
 }

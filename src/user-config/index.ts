@@ -1,5 +1,5 @@
 import { displayDate } from "@/dates";
-import { inject, InjectionKey, provide } from "vue";
+import { inject, InjectionKey, provide, Ref } from "vue";
 import { z } from "zod";
 
 export const userConfig = z.object({
@@ -36,12 +36,13 @@ export function parseUserConfig(unparsed: string): UserConfig {
 /**
  * The injection key for the user config.
  */
-export const USER_CONFIG_KEY: InjectionKey<UserConfig> = Symbol("user-config");
+export const USER_CONFIG_KEY: InjectionKey<Ref<UserConfig>> =
+	Symbol("user-config");
 
 /**
  * @returns The user config.
  */
-export function useUserConfig(): UserConfig {
+export function useUserConfig(): Ref<UserConfig> {
 	const injectedValue = inject(USER_CONFIG_KEY);
 	if (!injectedValue) {
 		throw new Error(
@@ -56,6 +57,6 @@ export function useUserConfig(): UserConfig {
  *
  * @param config The config to be provided.
  */
-export function provideUserConfig(config: UserConfig): void {
+export function provideUserConfig(config: Ref<UserConfig>): void {
 	provide(USER_CONFIG_KEY, config);
 }

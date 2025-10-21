@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { inject, provide } from "vue";
+import { inject, provide, ref } from "vue";
 import {
 	getDefaultUserConfig,
 	parseUserConfig,
@@ -66,7 +66,7 @@ describe(parseUserConfig, () => {
 describe(provideUserConfig, () => {
 	it("provides the user config", () => {
 		// Arrange
-		const config = getDefaultUserConfig();
+		const config = ref(getDefaultUserConfig());
 
 		// Act
 		provideUserConfig(config);

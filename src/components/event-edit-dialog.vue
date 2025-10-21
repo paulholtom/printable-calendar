@@ -2,7 +2,7 @@
 	<DialogLayout title="Event" v-model:is-open="dialogOpen" @close="cancel()">
 		<div class="input-and-label">
 			<label :for="dateId">Date</label>
-			<input :id="dateId" type="date" v-model="date" />
+			<input :id="dateId" type="date" v-model="dateModel" />
 		</div>
 		<div class="input-and-label">
 			<label :for="summaryId">Summary</label>
@@ -10,8 +10,23 @@
 				:id="summaryId"
 				type="text"
 				placeholder="Enter a summary"
-				v-model="summary"
+				v-model="eventModel.summary"
 			/>
+		</div>
+		<div class="input-and-label">
+			<label :for="recurranceFrequencyId">Repeats</label>
+			<select :id="recurranceFrequencyId" v-model="recurranceFrequency">
+				<option :value="undefined">Never</option>
+				<option
+					v-for="[optionValue, optionText] in Object.entries(
+						recurranceFrequencyOptions,
+					)"
+					:key="optionValue"
+					:value="optionValue"
+				>
+					{{ optionText }}
+				</option>
+			</select>
 		</div>
 		<template #footer>
 			<button @click="cancel()">Cancel</button>
@@ -23,8 +38,8 @@
 
 <script setup lang="ts">
 import { getDefaultIcsEvent } from "@/calendar-events";
-import { IcsEvent } from "ts-ics";
-import { ref } from "vue";
+import { IcsEvent, IcsRecurrenceRuleFrequency } from "ts-ics";
+import { computed, ref, toRaw } from "vue";
 import DialogLayout from "./dialog-layout.vue";
 import {
 	EVENT_EDIT_DIALOG_ACTION,
@@ -33,14 +48,53 @@ import {
 
 const dialogOpen = ref(false);
 
+const eventModel = ref<IcsEvent>(getDefaultIcsEvent());
+
 let promiseResolver: ((result: EventEditDialogResult) => void) | undefined =
 	undefined;
 
-const date = ref(``);
+const dateModel = computed({
+	get() {
+		const startDate = eventModel.value.start.date;
+		return `${startDate.getFullYear()}-${(startDate.getMonth() + 1).toString().padStart(2, "0")}-${startDate.getDate().toString().padStart(2, "0")}`;
+	},
+	set(newValue) {
+		eventModel.value.start.date = new Date(
+			parseInt(newValue.substring(0, 4)),
+			parseInt(newValue.substring(5, 7)) - 1,
+			parseInt(newValue.substring(8, 10)),
+		);
+	},
+});
 const dateId = crypto.randomUUID();
 
-const summary = ref("");
 const summaryId = crypto.randomUUID();
+
+const recurranceFrequency = computed({
+	get() {
+		return eventModel.value.recurrenceRule?.frequency;
+	},
+	set(newValue) {
+		if (!newValue) {
+			eventModel.value.recurrenceRule = undefined;
+			return;
+		}
+		if (!eventModel.value.recurrenceRule) {
+			eventModel.value.recurrenceRule = { frequency: newValue };
+			return;
+		}
+		eventModel.value.recurrenceRule.frequency = newValue;
+	},
+});
+const recurranceFrequencyId = crypto.randomUUID();
+const recurranceFrequencyOptions: {
+	[Value in IcsRecurrenceRuleFrequency]?: string;
+} = {
+	DAILY: "Daily",
+	WEEKLY: "Weekly",
+	MONTHLY: "Monthly",
+	YEARLY: "Annually",
+};
 
 function cancel() {
 	promiseResolver?.({ action: EVENT_EDIT_DIALOG_ACTION.CANCEL });
@@ -60,23 +114,11 @@ function deleteEvent() {
 function save(): void {
 	promiseResolver?.({
 		action: EVENT_EDIT_DIALOG_ACTION.SAVE,
-		event: {
-			...getDefaultIcsEvent(),
-			start: { date: parseDate() },
-			summary: summary.value,
-		},
+		event: structuredClone(toRaw(eventModel.value)),
 	});
 	promiseResolver = undefined;
 
 	dialogOpen.value = false;
-}
-
-function parseDate(): Date {
-	return new Date(
-		parseInt(date.value.substring(0, 4)),
-		parseInt(date.value.substring(5, 7)) - 1,
-		parseInt(date.value.substring(8, 10)),
-	);
 }
 
 /**
@@ -95,10 +137,7 @@ function createNewEvent(): Promise<EventEditDialogResult> {
  * @returns Promise that resolves with the details of the user's actions in the dialog.
  */
 function updateEvent(event: IcsEvent): Promise<EventEditDialogResult> {
-	const startDate = event.start.date;
-	date.value = `${startDate.getFullYear()}-${(startDate.getMonth() + 1).toString().padStart(2, "0")}-${startDate.getDate().toString().padStart(2, "0")}`;
-
-	summary.value = event.summary;
+	eventModel.value = event;
 
 	const { resolve, promise } = Promise.withResolvers<EventEditDialogResult>();
 	promiseResolver = resolve;
