@@ -14,6 +14,14 @@
 			/>
 		</div>
 		<div class="input-and-label">
+			<input type="checkbox" v-model="allDayModel" :id="allDayId" />
+			<label :for="allDayId">All Day</label>
+		</div>
+		<div class="input-and-label" v-if="!allDayModel">
+			<label :for="timeId">Time</label>
+			<input type="time" v-model="timeModel" :id="timeId" />
+		</div>
+		<div class="input-and-label">
 			<label :for="recurranceFrequencyId">Repeats</label>
 			<select :id="recurranceFrequencyId" v-model="recurranceFrequency">
 				<option :value="undefined">Never</option>
@@ -63,10 +71,49 @@ const dateModel = computed({
 			parseInt(newValue.substring(0, 4)),
 			parseInt(newValue.substring(5, 7)) - 1,
 			parseInt(newValue.substring(8, 10)),
+			eventModel.value.start.date.getHours(),
+			eventModel.value.start.date.getMinutes(),
 		);
 	},
 });
 const dateId = crypto.randomUUID();
+
+const allDayModel = computed({
+	get() {
+		return eventModel.value.start.type !== "DATE-TIME";
+	},
+	set(newValue) {
+		eventModel.value.start.type = newValue ? "DATE" : "DATE-TIME";
+
+		if (newValue) {
+			const startDate = eventModel.value.start.date;
+			eventModel.value.start.date = new Date(
+				startDate.getFullYear(),
+				startDate.getMonth(),
+				startDate.getDate(),
+			);
+		}
+	},
+});
+const allDayId = crypto.randomUUID();
+
+const timeModel = computed({
+	get() {
+		const startDate = eventModel.value.start.date;
+		return `${startDate.getHours().toString().padStart(2, "0")}:${startDate.getMinutes().toString().padStart(2, "0")}`;
+	},
+	set(newValue) {
+		const startDate = eventModel.value.start.date;
+		eventModel.value.start.date = new Date(
+			startDate.getFullYear(),
+			startDate.getMonth(),
+			startDate.getDate(),
+			parseInt(newValue.substring(0, 2)),
+			parseInt(newValue.substring(3, 5)),
+		);
+	},
+});
+const timeId = crypto.randomUUID();
 
 const summaryId = crypto.randomUUID();
 

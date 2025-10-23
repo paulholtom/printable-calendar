@@ -7,7 +7,15 @@
 			:key="event.date.getTime() + event.event.uid"
 			@click="$emit('eventClicked', event)"
 		>
-			{{ event.event.summary }}
+			<span class="time" v-if="event.event.start.type === 'DATE-TIME'">
+				{{
+					event.date.toLocaleTimeString(undefined, {
+						hour: "numeric",
+						minute: "2-digit",
+					})
+				}}
+			</span>
+			<span class="summary">{{ event.event.summary }}</span>
 		</p>
 	</section>
 </template>
@@ -46,5 +54,9 @@ defineEmits<{ eventClicked: [event: EventOccurrence] }>();
 
 .event {
 	cursor: pointer;
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 5px;
+	align-items: center;
 }
 </style>

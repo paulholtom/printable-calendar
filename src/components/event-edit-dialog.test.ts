@@ -260,6 +260,184 @@ describe("updateEvent", () => {
 		wrapper.getByRole("dialog");
 	});
 
+	it("updates the summary if the summary input is changed", async () => {
+		// Arrange
+		const newSummary = "Changed";
+		const wrapper = await callComponentFunction("updateEvent", {
+			...getDefaultIcsEvent(),
+			summary: "Initial",
+		});
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+		const summaryInput = within(dialog).getByLabelText("Summary");
+		await fireEvent.update(summaryInput, newSummary);
+		const saveButton = within(dialog).getByRole("button", {
+			name: "Save",
+		});
+		await fireEvent.click(saveButton);
+
+		// Assert
+		expect(getEmittedEvent(wrapper).summary).toEqual(newSummary);
+	});
+
+	it("updates the date, preserving the time if the date input is changed", async () => {
+		// Arrange
+		const date = new Date(2025, 10, 4, 13, 6);
+		const newYear = 2027;
+		const newMonth = 8;
+		const newDate = 22;
+		const wrapper = await callComponentFunction("updateEvent", {
+			...getDefaultIcsEvent(),
+			start: {
+				date,
+				type: "DATE-TIME",
+			},
+		});
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+		const dateInput = within(dialog).getByLabelText("Date");
+		await fireEvent.update(
+			dateInput,
+			`${newYear}-${(newMonth + 1).toString().padStart(2, "0")}-${newDate.toString().padEnd(2, "0")}`,
+		);
+		const saveButton = within(dialog).getByRole("button", {
+			name: "Save",
+		});
+		await fireEvent.click(saveButton);
+
+		// Assert
+		expect(getEmittedEvent(wrapper).start.date).toEqual(
+			new Date(
+				newYear,
+				newMonth,
+				newDate,
+				date.getHours(),
+				date.getMinutes(),
+			),
+		);
+	});
+
+	it.each<{
+		initialValue: "DATE" | "DATE-TIME" | undefined;
+		expectedValue: "DATE" | "DATE-TIME";
+	}>([
+		{ initialValue: "DATE", expectedValue: "DATE-TIME" },
+		{ initialValue: undefined, expectedValue: "DATE-TIME" },
+		{ initialValue: "DATE-TIME", expectedValue: "DATE" },
+	])(
+		"toggles the start date type from $initialValue to $expectedValue if the all day checkbox is clicked",
+		async ({ initialValue, expectedValue }) => {
+			// Arrange
+			const wrapper = await callComponentFunction("updateEvent", {
+				...getDefaultIcsEvent(),
+				start: { date: new Date(), type: initialValue },
+			});
+
+			// Act
+			const dialog = wrapper.getByRole("dialog");
+			const allDayCheckbox = within(dialog).getByRole("checkbox", {
+				name: "All Day",
+			});
+			await fireEvent.click(allDayCheckbox);
+			const saveButton = within(dialog).getByRole("button", {
+				name: "Save",
+			});
+			await fireEvent.click(saveButton);
+
+			// Assert
+			expect(getEmittedEvent(wrapper).start.type).toBe(expectedValue);
+		},
+	);
+
+	it("clears the time if the all day check box is toggled off", async () => {
+		// Arrange
+		const date = new Date(2025, 6, 7, 10, 13);
+		const wrapper = await callComponentFunction("updateEvent", {
+			...getDefaultIcsEvent(),
+			start: { date, type: "DATE-TIME" },
+		});
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+		const allDayCheckbox = within(dialog).getByRole("checkbox", {
+			name: "All Day",
+		});
+		await fireEvent.click(allDayCheckbox);
+		const saveButton = within(dialog).getByRole("button", {
+			name: "Save",
+		});
+		await fireEvent.click(saveButton);
+
+		// Assert
+		expect(getEmittedEvent(wrapper).start.date).toEqual(
+			new Date(date.getFullYear(), date.getMonth(), date.getDate()),
+		);
+	});
+
+	it("doesn't display the time input if the start date is of type DATE", async () => {
+		// Arrange
+		const wrapper = await callComponentFunction("updateEvent", {
+			...getDefaultIcsEvent(),
+			start: { date: new Date(), type: "DATE" },
+		});
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+
+		// Assert
+		expect(within(dialog).queryByLabelText("Time")).toBeNull();
+	});
+
+	it("displays the time input if the start date is of type DATE-TIME", async () => {
+		// Arrange
+		const wrapper = await callComponentFunction("updateEvent", {
+			...getDefaultIcsEvent(),
+			start: { date: new Date(), type: "DATE-TIME" },
+		});
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+
+		// Assert
+		within(dialog).getByLabelText("Time");
+	});
+
+	it("updates the time if the time input is changed", async () => {
+		// Arrange
+		const date = new Date(2025, 6, 7, 10, 13);
+		const newHour = 12;
+		const newMinute = 54;
+		const wrapper = await callComponentFunction("updateEvent", {
+			...getDefaultIcsEvent(),
+			start: { date, type: "DATE-TIME" },
+		});
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+		const timeInput = within(dialog).getByLabelText("Time");
+		await fireEvent.update(
+			timeInput,
+			`${newHour.toString().padStart(2, "0")}:${newMinute.toString().padStart(2, "0")}`,
+		);
+		const saveButton = within(dialog).getByRole("button", {
+			name: "Save",
+		});
+		await fireEvent.click(saveButton);
+
+		// Assert
+		expect(getEmittedEvent(wrapper).start.date).toEqual(
+			new Date(
+				date.getFullYear(),
+				date.getMonth(),
+				date.getDate(),
+				newHour,
+				newMinute,
+			),
+		);
+	});
+
 	it("removes recurrance rule if the frequency changed to undefined", async () => {
 		// Arrange
 		const wrapper = await callComponentFunction("updateEvent", {

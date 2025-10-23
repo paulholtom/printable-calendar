@@ -38,6 +38,68 @@ it("displays provided events", () => {
 	wrapper.getByText(event.summary);
 });
 
+it("displays time if an event date is a DATE-TIME", () => {
+	// Arrange
+	const date = new Date(2025, 5, 10, 10, 5);
+	const event: IcsEvent = {
+		...getDefaultIcsEvent(),
+		summary: "Some Event",
+		start: {
+			date,
+			type: "DATE-TIME",
+		},
+	};
+
+	// Act
+	const wrapper = render(CalendarDay, {
+		props: {
+			date,
+			variant: "current-month",
+			events: [{ date, sourceCalendar: "default", event }],
+		},
+	});
+
+	// Assert
+	wrapper.getByText(
+		date.toLocaleTimeString(undefined, {
+			hour: "numeric",
+			minute: "2-digit",
+		}),
+	);
+});
+
+it("doesn't display the time if an event date is a DATE", () => {
+	// Arrange
+	const date = new Date(2025, 5, 10, 10, 5);
+	const event: IcsEvent = {
+		...getDefaultIcsEvent(),
+		summary: "Some Event",
+		start: {
+			date,
+			type: "DATE",
+		},
+	};
+
+	// Act
+	const wrapper = render(CalendarDay, {
+		props: {
+			date,
+			variant: "current-month",
+			events: [{ date, sourceCalendar: "default", event }],
+		},
+	});
+
+	// Assert
+	expect(
+		wrapper.queryByText(
+			date.toLocaleTimeString(undefined, {
+				hour: "numeric",
+				minute: "2-digit",
+			}),
+		),
+	).toBeNull();
+});
+
 it("emits when an event is clicked", async () => {
 	// Arrange
 	const date = new Date(2025, 5, 10);
