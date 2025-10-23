@@ -30,7 +30,7 @@
 		</div>
 		<template #footer>
 			<button @click="cancel()">Cancel</button>
-			<button @click="deleteEvent()">Delete</button>
+			<button v-if="allowDelete" @click="deleteEvent()">Delete</button>
 			<button @click="save()">Save</button>
 		</template>
 	</DialogLayout>
@@ -121,13 +121,16 @@ function save(): void {
 	dialogOpen.value = false;
 }
 
+const allowDelete = ref(false);
+
 /**
  * Create a new calendar event.
  *
  * @returns Promise that resolves with the details of the user's actions in the dialog.
  */
 function createNewEvent(): Promise<EventEditDialogResult> {
-	return updateEvent({ ...getDefaultIcsEvent(), summary: "" });
+	allowDelete.value = false;
+	return setupForEvent({ ...getDefaultIcsEvent(), summary: "" });
 }
 
 /**
@@ -137,6 +140,11 @@ function createNewEvent(): Promise<EventEditDialogResult> {
  * @returns Promise that resolves with the details of the user's actions in the dialog.
  */
 function updateEvent(event: IcsEvent): Promise<EventEditDialogResult> {
+	allowDelete.value = true;
+	return setupForEvent(event);
+}
+
+function setupForEvent(event: IcsEvent): Promise<EventEditDialogResult> {
 	eventModel.value = structuredClone(toRaw(event));
 
 	const { resolve, promise } = Promise.withResolvers<EventEditDialogResult>();
