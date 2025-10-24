@@ -2,9 +2,9 @@
 	<div class="app">
 		<template v-if="errors.length > 0">
 			<p>Encountered unrecoverable errors:</p>
-			<p v-for="(error, index) in errors" :key="index">
-				{{ error }}
-			</p>
+			<pre v-for="(error, index) in errors" :key="index">{{
+				displayError(error)
+			}}</pre>
 		</template>
 		<template v-else-if="allReady">
 			<nav class="controls">
@@ -59,6 +59,24 @@ import {
 
 const errors = ref<unknown[]>([]);
 const eventEditDialog = useTemplateRef("eventEditDialog");
+
+function displayError(error: unknown): string {
+	if (error instanceof Error) {
+		return errorToString(error);
+	}
+	return `${error}`;
+}
+
+function errorToString(error: Error): string {
+	let output = error.toString();
+	if (error.stack) {
+		output = `${error.stack}`;
+	}
+	if (error.cause) {
+		output += `\nCaused by: ${displayError(error.cause)}`;
+	}
+	return output;
+}
 
 const configFileLoaded = ref(false);
 const configFile = ref<UserConfig>(getDefaultUserConfig());
