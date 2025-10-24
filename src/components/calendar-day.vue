@@ -1,11 +1,15 @@
 <template>
-	<section class="calendar-day" :class="[variant]">
+	<section
+		class="calendar-day"
+		:class="[variant]"
+		@click="$emit('dayClicked', date)"
+	>
 		<header class="date-display">{{ date.getDate() }}</header>
 		<p
 			class="event"
 			v-for="event in events"
 			:key="event.date.getTime() + event.event.uid"
-			@click="$emit('eventClicked', event)"
+			@click.stop="$emit('eventClicked', event)"
 		>
 			<span class="time" v-if="event.event.start.type === 'DATE-TIME'">
 				{{
@@ -39,7 +43,10 @@ defineProps<{
 	events: EventOccurrence[] | undefined;
 }>();
 
-defineEmits<{ eventClicked: [event: EventOccurrence] }>();
+defineEmits<{
+	eventClicked: [event: EventOccurrence];
+	dayClicked: [day: Date];
+}>();
 </script>
 
 <style lang="css" scoped>

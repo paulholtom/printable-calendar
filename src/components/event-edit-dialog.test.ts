@@ -1,4 +1,5 @@
 import { getDefaultIcsEvent } from "@/calendar-events";
+import { getDaysOfWeek } from "@/dates";
 import { fireEvent, render, RenderResult, within } from "@testing-library/vue";
 import { IcsEvent, IcsRecurrenceRule } from "ts-ics";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,6 +9,19 @@ import {
 	EventEditDialogResult,
 } from "./event-edit-dialog-result";
 import EventEditDialog from "./event-edit-dialog.vue";
+
+vi.mock(import("@/dates"));
+
+// Create a mock for the days of the week so tests don't need to worry about different localization.
+const DAYS_OF_WEEK = [
+	"Sunday",
+	"Monday",
+	"Tuesday",
+	"Wednesday",
+	"Thursday",
+	"Friday",
+	"Saturday",
+];
 
 const TestingComponent = defineComponent({
 	components: { EventEditDialog },
@@ -22,9 +36,10 @@ const TestingComponent = defineComponent({
 	emits: ["dialogResult"],
 	methods: {
 		async create() {
+			const event: IcsEvent = this.$props.event ?? getDefaultIcsEvent();
 			this.$emit(
 				"dialogResult",
-				await this.$refs.eventEditDialog.createNewEvent(),
+				await this.$refs.eventEditDialog.createNewEvent(event),
 			);
 		},
 		async update() {
@@ -42,6 +57,9 @@ beforeEach(() => {
 	vi.useFakeTimers();
 
 	window.confirm = vi.fn();
+	window.alert = vi.fn();
+
+	vi.mocked(getDaysOfWeek).mockReturnValue(DAYS_OF_WEEK);
 });
 
 afterEach(() => {
@@ -59,7 +77,7 @@ it("doesn't display the dialog initially", () => {
 
 async function callComponentFunction(
 	functionName: "createNewEvent" | "updateEvent",
-	event?: IcsEvent,
+	event: IcsEvent,
 ): Promise<RenderResult> {
 	// Arrange
 	const wrapper = render(TestingComponent, { props: { event } });
@@ -105,7 +123,10 @@ describe.each([
 	it("displays the dialog", async () => {
 		// Arrange
 		// Act
-		const wrapper = await callComponentFunction(eventName);
+		const wrapper = await callComponentFunction(
+			eventName,
+			getDefaultIcsEvent(),
+		);
 
 		// Assert
 		wrapper.getByRole("dialog");
@@ -115,7 +136,10 @@ describe.each([
 		"emits a cancel result and closes the dialog if the $buttonName button is clicked",
 		async ({ buttonName }) => {
 			// Arrange
-			const wrapper = await callComponentFunction(eventName);
+			const wrapper = await callComponentFunction(
+				eventName,
+				getDefaultIcsEvent(),
+			);
 
 			// Act
 			const dialog = wrapper.getByRole("dialog");
@@ -133,45 +157,34 @@ describe.each([
 		},
 	);
 
-	it("creates a recurrance rule if the frequency is set", async () => {
+	it("displays an alert and doesn't close the dialog if the save button is clicked without a summary specified", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction(eventName);
+		const wrapper = await callComponentFunction(eventName, {
+			...getDefaultIcsEvent(),
+			summary: "",
+		});
 
 		// Act
 		const dialog = wrapper.getByRole("dialog");
-		const frequencyInput = within(dialog).getByLabelText("Repeats");
-		await fireEvent.update(frequencyInput, "DAILY");
 		const saveButton = within(dialog).getByRole("button", { name: "Save" });
 		await fireEvent.click(saveButton);
 
 		// Assert
-		const expectedResult: IcsRecurrenceRule = {
-			frequency: "DAILY",
-		};
-		expect(getEmittedEvent(wrapper).recurrenceRule).toEqual(expectedResult);
+		expect(window.alert).toHaveBeenCalled();
+		expect(wrapper.emitted("dialogResult")).toBeUndefined();
+		wrapper.getByRole("dialog");
 	});
-});
 
-describe("createNewEvent", () => {
-	it("doesn't display the delete button", async () => {
+	it("returns the event and closes the dialog if the save button is clicked after specifying a summary", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction("createNewEvent");
+		const specifiedSummary = "New Summary";
+		const originalEvent: IcsEvent = getDefaultIcsEvent();
+		const wrapper = await callComponentFunction(eventName, originalEvent);
 
 		// Act
 		const dialog = wrapper.getByRole("dialog");
-
-		// Assert
-		expect(
-			within(dialog).queryByRole("button", { name: "Delete" }),
-		).toBeNull();
-	});
-
-	it("returns a new event and closes the dialog if the save button is clicked", async () => {
-		// Arrange
-		const wrapper = await callComponentFunction("createNewEvent");
-
-		// Act
-		const dialog = wrapper.getByRole("dialog");
+		const summaryInput = within(dialog).getByLabelText("Summary");
+		await fireEvent.update(summaryInput, specifiedSummary);
 		const saveButton = within(dialog).getByRole("button", { name: "Save" });
 		await fireEvent.click(saveButton);
 
@@ -179,26 +192,12 @@ describe("createNewEvent", () => {
 		const expectedEmit: EventEditDialogResult = {
 			action: EVENT_EDIT_DIALOG_ACTION.SAVE,
 			event: {
-				...getDefaultIcsEvent(),
-				summary: "",
-				uid: expect.any(String),
+				...originalEvent,
+				summary: specifiedSummary,
 			},
 		};
 		expect(wrapper.emitted("dialogResult")).toEqual([[expectedEmit]]);
 		expect(wrapper.queryByRole("dialog")).toBeNull();
-	});
-});
-
-describe("updateEvent", () => {
-	it("displays the delete button", async () => {
-		// Arrange
-		const wrapper = await callComponentFunction("updateEvent");
-
-		// Act
-		const dialog = wrapper.getByRole("dialog");
-
-		// Assert
-		within(dialog).getByRole("button", { name: "Delete" });
 	});
 
 	it("returns the original event and closes the dialog if the save button is clicked immediately", async () => {
@@ -207,7 +206,7 @@ describe("updateEvent", () => {
 			...getDefaultIcsEvent(),
 			summary: "Something different",
 		};
-		const wrapper = await callComponentFunction("updateEvent", event);
+		const wrapper = await callComponentFunction(eventName, event);
 
 		// Act
 		const dialog = wrapper.getByRole("dialog");
@@ -223,62 +222,25 @@ describe("updateEvent", () => {
 		expect(wrapper.queryByRole("dialog")).toBeNull();
 	});
 
-	it("indicates the event should be deleted and closes the dialog if the delete button is clicked and it's confirmed", async () => {
+	it("creates a recurrance rule if the frequency is set", async () => {
 		// Arrange
-		vi.mocked(window.confirm).mockReturnValue(true);
-		const wrapper = await callComponentFunction("updateEvent");
+		const wrapper = await callComponentFunction(
+			eventName,
+			getDefaultIcsEvent(),
+		);
 
 		// Act
 		const dialog = wrapper.getByRole("dialog");
-		const deleteButton = within(dialog).getByRole("button", {
-			name: "Delete",
-		});
-		await fireEvent.click(deleteButton);
-
-		// Assert
-		const expectedEmit: EventEditDialogResult = {
-			action: EVENT_EDIT_DIALOG_ACTION.DELETE,
-		};
-		expect(wrapper.emitted("dialogResult")).toEqual([[expectedEmit]]);
-		expect(wrapper.queryByRole("dialog")).toBeNull();
-	});
-
-	it("doesn't return or close the dialog if the delete button is clicked but it's not confirmed", async () => {
-		// Arrange
-		vi.mocked(window.confirm).mockReturnValue(false);
-		const wrapper = await callComponentFunction("updateEvent");
-
-		// Act
-		const dialog = wrapper.getByRole("dialog");
-		const deleteButton = within(dialog).getByRole("button", {
-			name: "Delete",
-		});
-		await fireEvent.click(deleteButton);
-
-		// Assert
-		expect(wrapper.emitted("dialogResult")).toBeUndefined();
-		wrapper.getByRole("dialog");
-	});
-
-	it("updates the summary if the summary input is changed", async () => {
-		// Arrange
-		const newSummary = "Changed";
-		const wrapper = await callComponentFunction("updateEvent", {
-			...getDefaultIcsEvent(),
-			summary: "Initial",
-		});
-
-		// Act
-		const dialog = wrapper.getByRole("dialog");
-		const summaryInput = within(dialog).getByLabelText("Summary");
-		await fireEvent.update(summaryInput, newSummary);
-		const saveButton = within(dialog).getByRole("button", {
-			name: "Save",
-		});
+		const frequencyInput = within(dialog).getByLabelText("Repeats");
+		await fireEvent.update(frequencyInput, "DAILY");
+		const saveButton = within(dialog).getByRole("button", { name: "Save" });
 		await fireEvent.click(saveButton);
 
 		// Assert
-		expect(getEmittedEvent(wrapper).summary).toEqual(newSummary);
+		const expectedResult: IcsRecurrenceRule = {
+			frequency: "DAILY",
+		};
+		expect(getEmittedEvent(wrapper).recurrenceRule).toEqual(expectedResult);
 	});
 
 	it("updates the date, preserving the time if the date input is changed", async () => {
@@ -287,7 +249,7 @@ describe("updateEvent", () => {
 		const newYear = 2027;
 		const newMonth = 8;
 		const newDate = 22;
-		const wrapper = await callComponentFunction("updateEvent", {
+		const wrapper = await callComponentFunction(eventName, {
 			...getDefaultIcsEvent(),
 			start: {
 				date,
@@ -330,7 +292,7 @@ describe("updateEvent", () => {
 		"toggles the start date type from $initialValue to $expectedValue if the all day checkbox is clicked",
 		async ({ initialValue, expectedValue }) => {
 			// Arrange
-			const wrapper = await callComponentFunction("updateEvent", {
+			const wrapper = await callComponentFunction(eventName, {
 				...getDefaultIcsEvent(),
 				start: { date: new Date(), type: initialValue },
 			});
@@ -354,7 +316,7 @@ describe("updateEvent", () => {
 	it("clears the time if the all day check box is toggled off", async () => {
 		// Arrange
 		const date = new Date(2025, 6, 7, 10, 13);
-		const wrapper = await callComponentFunction("updateEvent", {
+		const wrapper = await callComponentFunction(eventName, {
 			...getDefaultIcsEvent(),
 			start: { date, type: "DATE-TIME" },
 		});
@@ -378,7 +340,7 @@ describe("updateEvent", () => {
 
 	it("doesn't display the time input if the start date is of type DATE", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction("updateEvent", {
+		const wrapper = await callComponentFunction(eventName, {
 			...getDefaultIcsEvent(),
 			start: { date: new Date(), type: "DATE" },
 		});
@@ -392,7 +354,7 @@ describe("updateEvent", () => {
 
 	it("displays the time input if the start date is of type DATE-TIME", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction("updateEvent", {
+		const wrapper = await callComponentFunction(eventName, {
 			...getDefaultIcsEvent(),
 			start: { date: new Date(), type: "DATE-TIME" },
 		});
@@ -409,7 +371,7 @@ describe("updateEvent", () => {
 		const date = new Date(2025, 6, 7, 10, 13);
 		const newHour = 12;
 		const newMinute = 54;
-		const wrapper = await callComponentFunction("updateEvent", {
+		const wrapper = await callComponentFunction(eventName, {
 			...getDefaultIcsEvent(),
 			start: { date, type: "DATE-TIME" },
 		});
@@ -440,7 +402,7 @@ describe("updateEvent", () => {
 
 	it("removes recurrance rule if the frequency changed to undefined", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction("updateEvent", {
+		const wrapper = await callComponentFunction(eventName, {
 			...getDefaultIcsEvent(),
 			recurrenceRule: { frequency: "MONTHLY" },
 		});
@@ -458,7 +420,7 @@ describe("updateEvent", () => {
 
 	it("updates the recurrence frequency from one value to another", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction("updateEvent", {
+		const wrapper = await callComponentFunction(eventName, {
 			...getDefaultIcsEvent(),
 			recurrenceRule: { frequency: "MONTHLY" },
 		});
@@ -475,5 +437,135 @@ describe("updateEvent", () => {
 			frequency: "YEARLY",
 		};
 		expect(getEmittedEvent(wrapper).recurrenceRule).toEqual(expectedResult);
+	});
+
+	it("sets the by day value of the recurrence rule when switching to WEEKLY frequency", async () => {
+		// Arrange
+		const wrapper = await callComponentFunction(eventName, {
+			...getDefaultIcsEvent(),
+			start: { date: new Date(2010, 5, 7) },
+			recurrenceRule: { frequency: "MONTHLY" },
+		});
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+		const frequencyInput = within(dialog).getByLabelText("Repeats");
+		await fireEvent.update(frequencyInput, "WEEKLY");
+		const saveButton = within(dialog).getByRole("button", { name: "Save" });
+		await fireEvent.click(saveButton);
+
+		// Assert
+		const expectedResult: IcsRecurrenceRule = {
+			frequency: "WEEKLY",
+			byDay: [
+				{
+					day: "MO",
+				},
+			],
+		};
+		expect(getEmittedEvent(wrapper).recurrenceRule).toEqual(expectedResult);
+	});
+
+	it("updates the by day value to match selected days of the week", async () => {
+		// Arrange
+		const wrapper = await callComponentFunction(eventName, {
+			...getDefaultIcsEvent(),
+			recurrenceRule: { frequency: "WEEKLY", byDay: [{ day: "SA" }] },
+		});
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+		await fireEvent.click(within(dialog).getByLabelText("Saturday"));
+		await fireEvent.click(within(dialog).getByLabelText("Monday"));
+		const saveButton = within(dialog).getByRole("button", { name: "Save" });
+		await fireEvent.click(saveButton);
+
+		// Assert
+		const expectedResult: IcsRecurrenceRule = {
+			frequency: "WEEKLY",
+			byDay: [
+				{
+					day: "MO",
+				},
+			],
+		};
+		expect(getEmittedEvent(wrapper).recurrenceRule).toEqual(expectedResult);
+	});
+});
+
+describe("createNewEvent", () => {
+	it("doesn't display the delete button", async () => {
+		// Arrange
+		const wrapper = await callComponentFunction(
+			"createNewEvent",
+			getDefaultIcsEvent(),
+		);
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+
+		// Assert
+		expect(
+			within(dialog).queryByRole("button", { name: "Delete" }),
+		).toBeNull();
+	});
+});
+
+describe("updateEvent", () => {
+	it("displays the delete button", async () => {
+		// Arrange
+		const wrapper = await callComponentFunction(
+			"updateEvent",
+			getDefaultIcsEvent(),
+		);
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+
+		// Assert
+		within(dialog).getByRole("button", { name: "Delete" });
+	});
+
+	it("indicates the event should be deleted and closes the dialog if the delete button is clicked and it's confirmed", async () => {
+		// Arrange
+		vi.mocked(window.confirm).mockReturnValue(true);
+		const wrapper = await callComponentFunction(
+			"updateEvent",
+			getDefaultIcsEvent(),
+		);
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+		const deleteButton = within(dialog).getByRole("button", {
+			name: "Delete",
+		});
+		await fireEvent.click(deleteButton);
+
+		// Assert
+		const expectedEmit: EventEditDialogResult = {
+			action: EVENT_EDIT_DIALOG_ACTION.DELETE,
+		};
+		expect(wrapper.emitted("dialogResult")).toEqual([[expectedEmit]]);
+		expect(wrapper.queryByRole("dialog")).toBeNull();
+	});
+
+	it("doesn't return or close the dialog if the delete button is clicked but it's not confirmed", async () => {
+		// Arrange
+		vi.mocked(window.confirm).mockReturnValue(false);
+		const wrapper = await callComponentFunction(
+			"updateEvent",
+			getDefaultIcsEvent(),
+		);
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+		const deleteButton = within(dialog).getByRole("button", {
+			name: "Delete",
+		});
+		await fireEvent.click(deleteButton);
+
+		// Assert
+		expect(wrapper.emitted("dialogResult")).toBeUndefined();
+		wrapper.getByRole("dialog");
 	});
 });

@@ -36,6 +36,10 @@
 				</option>
 			</select>
 		</div>
+		<DayOfWeekInput
+			v-if="eventModel.recurrenceRule?.byDay"
+			v-model="eventModel.recurrenceRule.byDay"
+		/>
 		<template #footer>
 			<button @click="cancel()">Cancel</button>
 			<button v-if="allowDelete" @click="deleteEvent()">Delete</button>
@@ -45,9 +49,10 @@
 </template>
 
 <script setup lang="ts">
-import { getDefaultIcsEvent } from "@/calendar-events";
+import { getDefaultIcsEvent, ICS_WEEKDAY_MAP } from "@/calendar-events";
 import { IcsEvent, IcsRecurrenceRuleFrequency } from "ts-ics";
 import { computed, ref, toRaw } from "vue";
+import DayOfWeekInput from "./day-of-week-input.vue";
 import DialogLayout from "./dialog-layout.vue";
 import {
 	EVENT_EDIT_DIALOG_ACTION,
@@ -128,9 +133,16 @@ const recurranceFrequency = computed({
 		}
 		if (!eventModel.value.recurrenceRule) {
 			eventModel.value.recurrenceRule = { frequency: newValue };
-			return;
+		} else {
+			eventModel.value.recurrenceRule.frequency = newValue;
 		}
-		eventModel.value.recurrenceRule.frequency = newValue;
+		if (newValue === "WEEKLY") {
+			eventModel.value.recurrenceRule.byDay = [
+				{ day: ICS_WEEKDAY_MAP[eventModel.value.start.date.getDay()] },
+			];
+		} else {
+			eventModel.value.recurrenceRule.byDay = undefined;
+		}
 	},
 });
 const recurranceFrequencyId = crypto.randomUUID();
@@ -159,6 +171,11 @@ function deleteEvent() {
 }
 
 function save(): void {
+	if (eventModel.value.summary.trim() === "") {
+		alert("You need to enter a summary.");
+		return;
+	}
+
 	promiseResolver?.({
 		action: EVENT_EDIT_DIALOG_ACTION.SAVE,
 		event: structuredClone(toRaw(eventModel.value)),
@@ -175,9 +192,9 @@ const allowDelete = ref(false);
  *
  * @returns Promise that resolves with the details of the user's actions in the dialog.
  */
-function createNewEvent(): Promise<EventEditDialogResult> {
+function createNewEvent(event: IcsEvent): Promise<EventEditDialogResult> {
 	allowDelete.value = false;
-	return setupForEvent({ ...getDefaultIcsEvent(), summary: "" });
+	return setupForEvent(event);
 }
 
 /**

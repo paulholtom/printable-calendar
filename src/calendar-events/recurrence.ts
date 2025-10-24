@@ -1,5 +1,15 @@
-import { extendByRecurrenceRule, IcsEvent } from "ts-ics";
+import { extendByRecurrenceRule, IcsEvent, IcsWeekdayNumber } from "ts-ics";
 import { IcsCalendarCollection } from "./parsing";
+
+export const ICS_WEEKDAY_MAP: IcsWeekdayNumber["day"][] = [
+	"SU",
+	"MO",
+	"TU",
+	"WE",
+	"TH",
+	"FR",
+	"SA",
+];
 
 /**
  * @param date The date to check.

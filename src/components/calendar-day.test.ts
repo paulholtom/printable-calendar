@@ -100,6 +100,25 @@ it("doesn't display the time if an event date is a DATE", () => {
 	).toBeNull();
 });
 
+it("emits when a day is clicked", async () => {
+	// Arrange
+	const date = new Date(2025, 5, 10);
+	const wrapper = render(CalendarDay, {
+		props: {
+			date,
+			variant: "current-month",
+			events: [],
+		},
+	});
+	const dayDisplay = wrapper.getByText("10");
+
+	// Act
+	await fireEvent.click(dayDisplay);
+
+	// Assert
+	expect(wrapper.emitted("dayClicked")).toEqual([[date]]);
+});
+
 it("emits when an event is clicked", async () => {
 	// Arrange
 	const date = new Date(2025, 5, 10);

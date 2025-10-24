@@ -17,6 +17,7 @@
 </template>
 
 <script setup lang="ts">
+import { ICS_WEEKDAY_MAP } from "@/calendar-events";
 import { getDaysOfWeek } from "@/dates";
 import { IcsWeekdayNumber } from "ts-ics";
 
@@ -27,20 +28,10 @@ const daysOfWeek = getDaysOfWeek("long").map((name) => ({
 	id: crypto.randomUUID(),
 }));
 
-const weekdayMap: IcsWeekdayNumber["day"][] = [
-	"SU",
-	"MO",
-	"TU",
-	"WE",
-	"TH",
-	"FR",
-	"SA",
-];
-
 function isChecked(dayNumber: number): boolean {
 	return (
 		selectedValues.value.find(
-			(weekday) => weekday.day === weekdayMap[dayNumber],
+			(weekday) => weekday.day === ICS_WEEKDAY_MAP[dayNumber],
 		) !== undefined
 	);
 }
@@ -48,7 +39,7 @@ function isChecked(dayNumber: number): boolean {
 function toggle(dayNumber: number): void {
 	if (isChecked(dayNumber)) {
 		selectedValues.value = selectedValues.value.filter(
-			(weekday) => weekday.day !== weekdayMap[dayNumber],
+			(weekday) => weekday.day !== ICS_WEEKDAY_MAP[dayNumber],
 		);
 	}
 	// For some reason structure clone throws errors trying to clone these objects, so clone manually.
@@ -57,12 +48,12 @@ function toggle(dayNumber: number): void {
 	}));
 
 	const foundIndex = newValue.findIndex(
-		(weekday) => weekday.day === weekdayMap[dayNumber],
+		(weekday) => weekday.day === ICS_WEEKDAY_MAP[dayNumber],
 	);
 	if (foundIndex >= 0) {
 		newValue.splice(foundIndex, 1);
 	} else {
-		newValue.push({ day: weekdayMap[dayNumber] });
+		newValue.push({ day: ICS_WEEKDAY_MAP[dayNumber] });
 	}
 	selectedValues.value = newValue;
 }

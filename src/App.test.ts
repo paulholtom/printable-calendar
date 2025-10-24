@@ -258,6 +258,45 @@ describe("event editing", () => {
 		wrapper.getByRole("dialog");
 	});
 
+	it("displays the event creation dialog if a specific day is clicked on a monthly calendar", async () => {
+		// Arrange
+		const userConfig: UserConfig = getDefaultUserConfig();
+		userConfig.displayDate.month = 5;
+		userConfig.displayDate.year = 2025;
+		const filePromises = createFilePromises({
+			userConfig,
+		});
+		const wrapper = render(App);
+		await Promise.all(filePromises);
+
+		// Act
+		const dateButton = wrapper.getByText("10");
+		await fireEvent.click(dateButton);
+
+		// Assert
+		wrapper.getByRole("dialog");
+	});
+
+	it("displays the event creation dialog if a specific day is clicked on a yearly calendar", async () => {
+		// Arrange
+		const userConfig: UserConfig = getDefaultUserConfig();
+		userConfig.displayDate.month = undefined;
+		userConfig.displayDate.year = 2025;
+		const filePromises = createFilePromises({
+			userConfig,
+		});
+		const wrapper = render(App);
+		await Promise.all(filePromises);
+
+		// Act
+		const january = wrapper.getAllByRole("grid")[0];
+		const dateButton = within(january).getByText("10");
+		await fireEvent.click(dateButton);
+
+		// Assert
+		wrapper.getByRole("dialog");
+	});
+
 	it("saves an event created through the dialog", async () => {
 		// Arrange
 		const newEventSummary = "My shiny new event";

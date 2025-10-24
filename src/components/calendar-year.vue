@@ -7,6 +7,7 @@
 			:key="month"
 			:parent-events-by-date="eventsByDate"
 			@event-clicked="(event) => $emit('eventClicked', event)"
+			@day-clicked="(day) => $emit('dayClicked', day)"
 		/>
 	</section>
 </template>
@@ -20,7 +21,10 @@ import {
 import { computed } from "vue";
 import CalendarMonth from "./calendar-month.vue";
 
-defineEmits<{ eventClicked: [event: EventOccurrence] }>();
+defineEmits<{
+	eventClicked: [event: EventOccurrence];
+	dayClicked: [day: Date];
+}>();
 
 const props = defineProps<{
 	/**

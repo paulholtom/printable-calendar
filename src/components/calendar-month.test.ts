@@ -81,6 +81,28 @@ it("does not recalculate the events if they were provided", () => {
 	expect(getEventsByDateFromCalendarCollection).not.toHaveBeenCalled();
 });
 
+it("emits if a day was clicked", async () => {
+	// Arrange
+	const month = 5;
+	const year = 2025;
+	const calendarCollection = getDefaultIcsCalendarCollection();
+
+	// Act
+	const wrapper = render(CalendarMonth, {
+		props: { year, month },
+		global: {
+			provide: {
+				[ICS_CALENDAR_COLLECTION_KEY]: calendarCollection,
+			},
+		},
+	});
+	const dayDisplay = wrapper.getByText("10");
+	await fireEvent.click(dayDisplay);
+
+	// Assert
+	expect(wrapper.emitted("dayClicked")).toEqual([[new Date(2025, 5, 10)]]);
+});
+
 it("emits if an event was clicked", async () => {
 	// Arrange
 	const month = 5;

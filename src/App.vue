@@ -19,11 +19,13 @@
 					:year="configFile.displayDate.year"
 					:month="configFile.displayDate.month"
 					@event-clicked="editEvent"
+					@day-clicked="(day) => addEvent(day)"
 				/>
 				<CalendarYear
 					v-else
 					:year="configFile.displayDate.year"
 					@event-clicked="editEvent"
+					@day-clicked="(day) => addEvent(day)"
 				/>
 			</main>
 		</template>
@@ -32,11 +34,12 @@
 </template>
 
 <script setup lang="ts">
-import { generateIcsCalendar } from "ts-ics";
+import { generateIcsCalendar, IcsEvent } from "ts-ics";
 import { computed, reactive, ref, toRaw, useTemplateRef, watch } from "vue";
 import {
 	EventOccurrence,
 	getDefaultIcsCalendarCollection,
+	getDefaultIcsEvent,
 	IcsCalendarCollection,
 	parseIcsCalendarString,
 	provideIcsCalendarCollection,
@@ -109,8 +112,10 @@ const allReady = computed(
 	() => configFileLoaded.value && calendarFileLoaded.value,
 );
 
-async function addEvent() {
-	const result = await eventEditDialog.value?.createNewEvent();
+async function addEvent(date?: Date) {
+	const newEvent: IcsEvent = { ...getDefaultIcsEvent(), summary: "" };
+	newEvent.start.date = date ?? new Date(new Date().toDateString());
+	const result = await eventEditDialog.value?.createNewEvent(newEvent);
 
 	if (result?.action === EVENT_EDIT_DIALOG_ACTION.SAVE) {
 		if (!icsCalendarCollection.default.events) {
