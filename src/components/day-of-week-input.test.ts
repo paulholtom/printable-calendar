@@ -6,7 +6,7 @@ import DayOfWeekInput from "./day-of-week-input.vue";
 
 vi.mock(import("@/dates"));
 
-// Create a mock for the days of the week so test don't need to worry about different localization.
+// Create a mock for the days of the week so tests don't need to worry about different localization.
 const DAYS_OF_WEEK = [
 	"Sunday",
 	"Monday",
