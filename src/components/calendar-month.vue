@@ -30,7 +30,7 @@ import {
 	getEventsByDateFromCalendarCollection,
 	useIcsCalendarCollection,
 } from "@/calendar-events";
-import { getDateDisplayValue } from "@/dates";
+import { getDateDisplayValue, getDaysOfWeek } from "@/dates";
 import { computed } from "vue";
 import { CalendarDayVariant } from "./calendar-day-variant";
 import CalendarDay from "./calendar-day.vue";
@@ -94,18 +94,7 @@ function getCalendarDayVariant(date: Date): CalendarDayVariant {
 	return "current-month";
 }
 
-/**
- * This is an arbitrary date that is a Sunday.
- */
-const dayOfWeek = new Date(2023, 0, 1);
-const daysOfWeek: string[] = [];
-
-for (let i = 0; i < 7; i++) {
-	dayOfWeek.setDate(1 + i);
-	daysOfWeek.push(
-		dayOfWeek.toLocaleDateString(undefined, { weekday: "long" }),
-	);
-}
+const daysOfWeek = getDaysOfWeek("long");
 </script>
 
 <style lang="css" scoped>

@@ -1,42 +1,6 @@
 import z from "zod";
 
 /**
- * Just a date, without time or timezones.
- */
-export const dateOnly = z.object({
-	/**
-	 * The day of the month.
-	 */
-	date: z.number(),
-	/**
-	 * The month, using javascript conventions of 0 is January.
-	 */
-	month: z.number(),
-	/**
-	 * The year.
-	 */
-	year: z.number(),
-});
-
-/**
- * Just a date, without time or timezones.
- */
-export type DateOnly = z.infer<typeof dateOnly>;
-
-/**
- * @param date1 The first date to compare.
- * @param date2 The second date to compare.
- * @returns True if the dates are equal.
- */
-export function datesEqual(date1: DateOnly, date2: DateOnly): boolean {
-	return (
-		date1.date === date2.date &&
-		date1.month === date2.month &&
-		date1.year === date2.year
-	);
-}
-
-/**
  * The month/year to be shown.
  */
 export const displayDate = z.object({
@@ -67,4 +31,27 @@ export function getDateDisplayValue(date: DisplayDate): string {
 		year: "numeric",
 		month: "long",
 	});
+}
+
+/**
+ * Get the days of the week.
+ */
+export function getDaysOfWeek(
+	format: Exclude<Intl.DateTimeFormatOptions["weekday"], undefined>,
+): typeof daysOfWeek {
+	const daysOfWeek: string[] = [];
+
+	/**
+	 * This is an arbitrary date that is a Sunday.
+	 */
+	const dayOfWeek = new Date(2023, 0, 1);
+
+	for (let i = 0; i < 7; i++) {
+		dayOfWeek.setDate(1 + i);
+		daysOfWeek.push(
+			dayOfWeek.toLocaleDateString(undefined, { weekday: format }),
+		);
+	}
+
+	return daysOfWeek;
 }

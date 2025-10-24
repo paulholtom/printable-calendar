@@ -1,44 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DateOnly, datesEqual, getDateDisplayValue } from "./index";
+import { getDateDisplayValue, getDaysOfWeek } from "./index";
 
 beforeEach(() => {
 	vi.resetAllMocks();
-});
-
-describe(datesEqual, () => {
-	it.each<{ returns: boolean; date1: DateOnly; date2: DateOnly }>([
-		{
-			returns: true,
-			date1: { date: 5, month: 6, year: 2025 },
-			date2: { date: 5, month: 6, year: 2025 },
-		},
-		{
-			returns: false,
-			date1: { date: 6, month: 6, year: 2025 },
-			date2: { date: 5, month: 6, year: 2025 },
-		},
-		{
-			returns: false,
-			date1: { date: 5, month: 7, year: 2025 },
-			date2: { date: 5, month: 6, year: 2025 },
-		},
-		{
-			returns: false,
-			date1: { date: 5, month: 6, year: 2026 },
-			date2: { date: 5, month: 6, year: 2025 },
-		},
-	])(
-		"returns $returns when date1 is $date1 and date2 is $date2",
-		({ returns, date1, date2 }) => {
-			// Arrange
-
-			// Act
-			const result = datesEqual(date1, date2);
-
-			// Assert
-			expect(result).toBe(returns);
-		},
-	);
 });
 
 describe(getDateDisplayValue, () => {
@@ -68,5 +32,17 @@ describe(getDateDisplayValue, () => {
 
 		// Assert
 		expect(result).toBe("2015");
+	});
+});
+
+describe(getDaysOfWeek, () => {
+	it("gets values for all seven days of the week", () => {
+		// Arrange
+
+		// Act
+		const result = getDaysOfWeek("long");
+
+		// Assert
+		expect(result.length).toBe(7);
 	});
 });
