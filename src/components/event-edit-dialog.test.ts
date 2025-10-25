@@ -491,6 +491,152 @@ describe.each([
 		};
 		expect(getEmittedEvent(wrapper).recurrenceRule).toEqual(expectedResult);
 	});
+
+	it("defaults to repeating on the same day of the month as the start date when changing to a monthly frequency", async () => {
+		// Arrange
+		const wrapper = await callComponentFunction(eventName, {
+			...getDefaultIcsEvent(),
+			start: {
+				date: new Date(2025, 9, 25),
+			},
+		});
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+		await fireEvent.update(
+			within(dialog).getByLabelText("Repeats"),
+			"MONTHLY",
+		);
+		await fireEvent.click(
+			within(dialog).getByRole("button", { name: "Save" }),
+		);
+
+		// Assert
+		const expectedResult: IcsRecurrenceRule = {
+			frequency: "MONTHLY",
+			byMonthday: [25],
+		};
+		expect(getEmittedEvent(wrapper).recurrenceRule).toEqual(expectedResult);
+	});
+
+	it("defaults to repeating on the same day of the month as the start date when changing from repeating monthly by weekday to repeating by days of the month", async () => {
+		// Arrange
+		const wrapper = await callComponentFunction(eventName, {
+			...getDefaultIcsEvent(),
+			start: {
+				date: new Date(2025, 9, 25),
+			},
+			recurrenceRule: {
+				frequency: "MONTHLY",
+				byDay: [{ day: "TH", occurrence: 1 }],
+			},
+		});
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+		await fireEvent.click(within(dialog).getByLabelText("Day of month"));
+		await fireEvent.click(
+			within(dialog).getByRole("button", { name: "Save" }),
+		);
+
+		// Assert
+		const expectedResult: IcsRecurrenceRule = {
+			frequency: "MONTHLY",
+			byMonthday: [25],
+		};
+		expect(getEmittedEvent(wrapper).recurrenceRule).toEqual(expectedResult);
+	});
+
+	it("defaults to repeating on the same weekday as the start date when repeating monthly if switching from repeating by day of month to by weekdays", async () => {
+		// Arrange
+		const wrapper = await callComponentFunction(eventName, {
+			...getDefaultIcsEvent(),
+			start: {
+				date: new Date(2025, 9, 25),
+			},
+			recurrenceRule: {
+				frequency: "MONTHLY",
+				byMonthday: [25],
+			},
+		});
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+		await fireEvent.click(
+			within(dialog).getByLabelText("Weekday in month"),
+		);
+		await fireEvent.click(
+			within(dialog).getByRole("button", { name: "Save" }),
+		);
+
+		// Assert
+		const expectedResult: IcsRecurrenceRule = {
+			frequency: "MONTHLY",
+			byDay: [{ day: "SA", occurrence: 4 }],
+		};
+		expect(getEmittedEvent(wrapper).recurrenceRule).toEqual(expectedResult);
+	});
+
+	it("defaults to repeating on the last weekday as if the start date > 28 when repeating monthly if switching from repeating by day of month to by weekdays", async () => {
+		// Arrange
+		const wrapper = await callComponentFunction(eventName, {
+			...getDefaultIcsEvent(),
+			start: {
+				date: new Date(2025, 9, 29),
+			},
+			recurrenceRule: {
+				frequency: "MONTHLY",
+				byMonthday: [29],
+			},
+		});
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+		await fireEvent.click(
+			within(dialog).getByLabelText("Weekday in month"),
+		);
+		await fireEvent.click(
+			within(dialog).getByRole("button", { name: "Save" }),
+		);
+
+		// Assert
+		const expectedResult: IcsRecurrenceRule = {
+			frequency: "MONTHLY",
+			byDay: [{ day: "WE", occurrence: -1 }],
+		};
+		expect(getEmittedEvent(wrapper).recurrenceRule).toEqual(expectedResult);
+	});
+
+	it("can select different days when repeating monthly by day of the month", async () => {
+		// Arrange
+		const wrapper = await callComponentFunction(eventName, {
+			...getDefaultIcsEvent(),
+			start: {
+				date: new Date(2025, 9, 22),
+			},
+			recurrenceRule: {
+				frequency: "MONTHLY",
+				byMonthday: [22],
+			},
+		});
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+		await fireEvent.update(
+			within(dialog).getByLabelText("Days of the Month"),
+			"29",
+		);
+		await fireEvent.click(
+			within(dialog).getByRole("button", { name: "Save" }),
+		);
+
+		// Assert
+		const expectedResult: IcsRecurrenceRule = {
+			frequency: "MONTHLY",
+			byMonthday: [29],
+		};
+		expect(getEmittedEvent(wrapper).recurrenceRule).toEqual(expectedResult);
+	});
 });
 
 describe("createNewEvent", () => {

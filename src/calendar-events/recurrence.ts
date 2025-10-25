@@ -1,4 +1,9 @@
-import { extendByRecurrenceRule, IcsEvent, IcsWeekdayNumber } from "ts-ics";
+import {
+	extendByRecurrenceRule,
+	IcsEvent,
+	IcsRecurrenceRule,
+	IcsWeekdayNumber,
+} from "ts-ics";
 import { IcsCalendarCollection } from "./parsing";
 
 export const ICS_WEEKDAY_MAP: IcsWeekdayNumber["day"][] = [
@@ -42,6 +47,66 @@ export function getDaysForEventInRange(
 		}
 		return [];
 	}
+
+	// Monthly recurrence by weekday has some flaws in ts-ics. Work around those.
+	if (
+		event.recurrenceRule.frequency === "MONTHLY" &&
+		event.recurrenceRule.byDay
+	) {
+		/**
+		 * Positive occurrences will get midnight UTC time of the next date.
+		 * Negative occurrences will get midnight UTC time of the correct date.
+		 *
+		 * Since they're wrong in slightly different ways, split them up, so we can handle them separately.
+		 * In this situation an undefined or 0 occurrence doesn't make sense so they're ignored.
+		 */
+		const positiveOccurences: IcsRecurrenceRule = {
+			...event.recurrenceRule,
+			byDay: event.recurrenceRule.byDay.filter(
+				(weekday) => (weekday.occurrence ?? 0) > 0,
+			),
+		};
+
+		const negativeOccurences: IcsRecurrenceRule = {
+			...event.recurrenceRule,
+			byDay: event.recurrenceRule.byDay.filter(
+				(weekday) => (weekday.occurrence ?? 0) < 0,
+			),
+		};
+
+		return [
+			// Positve are ahead by 1 day, subtract 1 from the UTC date and combine with the event time.
+			...extendByRecurrenceRule(positiveOccurences, {
+				start: event.start.date,
+				// Since the determine date is ahead by 1 day, extend the date range being checked.
+				end: new Date(rangeEnd.getTime() + 24 * 60 * 60 * 1000),
+			}).map(
+				(date) =>
+					new Date(
+						date.getUTCFullYear(),
+						date.getUTCMonth(),
+						date.getUTCDate() - 1,
+						event.start.date.getHours(),
+						event.start.date.getMinutes(),
+					),
+			),
+			// Negative have the correct date, extract the UTC date and combine with the time.
+			...extendByRecurrenceRule(negativeOccurences, {
+				start: event.start.date,
+				end: rangeEnd,
+			}).map(
+				(date) =>
+					new Date(
+						date.getUTCFullYear(),
+						date.getUTCMonth(),
+						date.getUTCDate(),
+						event.start.date.getHours(),
+						event.start.date.getMinutes(),
+					),
+			),
+		].filter((date) => dateInRange(date, rangeStart, rangeEnd));
+	}
+
 	return extendByRecurrenceRule(event.recurrenceRule, {
 		start: event.start.date,
 		end: rangeEnd,

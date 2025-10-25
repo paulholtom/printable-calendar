@@ -239,4 +239,112 @@ describe(getEventsByDateFromCalendarCollection, () => {
 			}),
 		);
 	});
+
+	it("includes events that recur monthly by the day of the month", () => {
+		// Arrange
+		const event: IcsEvent = {
+			...getDefaultIcsEvent(),
+			start: { date: new Date(2025, 5, 2) },
+			recurrenceRule: {
+				frequency: "MONTHLY",
+				byMonthday: [6, 7],
+			},
+		};
+		const calendarCollection: IcsCalendarCollection = {
+			...getDefaultIcsCalendarCollection(),
+			default: {
+				...getDefaultIcsCalendar(),
+				events: [event],
+			},
+		};
+
+		// Act
+		const result = getEventsByDateFromCalendarCollection(
+			calendarCollection,
+			RANGE_START,
+			RANGE_END,
+		);
+
+		// Assert
+		expect(result).toEqual(
+			createExpectedEventsByDate({
+				6: [
+					{
+						date: new Date(2025, 5, 6),
+						sourceCalendar: "default",
+						event,
+					},
+				],
+				7: [
+					{
+						date: new Date(2025, 5, 7),
+						sourceCalendar: "default",
+						event,
+					},
+				],
+			}),
+		);
+	});
+
+	it("handles events that recur monthly by weekday", () => {
+		// Arrange
+		const event: IcsEvent = {
+			...getDefaultIcsEvent(),
+			start: { date: new Date(2025, 9, 23) },
+			recurrenceRule: {
+				frequency: "MONTHLY",
+				byDay: [
+					{
+						day: "SA",
+						occurrence: -1,
+					},
+					{
+						day: "SU",
+						occurrence: 4,
+					},
+					// This gets ingored since a weekday with no occurrence isn't valid in this situation.
+					{ day: "FR" },
+				],
+			},
+		};
+		const calendarCollection: IcsCalendarCollection = {
+			...getDefaultIcsCalendarCollection(),
+			default: {
+				...getDefaultIcsCalendar(),
+				events: [event],
+			},
+		};
+
+		// Act
+		const result = getEventsByDateFromCalendarCollection(
+			calendarCollection,
+			new Date(2025, 9, 25),
+			new Date(2025, 9, 26),
+		);
+
+		// Assert
+		const expectedResult = new Map<number, EventOccurrence[]>([
+			[
+				new Date(2025, 9, 25).getTime(),
+				[
+					{
+						date: new Date(2025, 9, 25),
+						sourceCalendar: "default",
+						event,
+					},
+				],
+			],
+			[
+				new Date(2025, 9, 26).getTime(),
+				[
+					{
+						date: new Date(2025, 9, 26),
+						sourceCalendar: "default",
+						event,
+					},
+				],
+			],
+		] satisfies [number, EventOccurrence[]][]);
+		expect(result).toEqual(expectedResult);
+	});
 });

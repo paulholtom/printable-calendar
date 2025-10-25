@@ -2,7 +2,7 @@
 	<div class="app">
 		<template v-if="errors.length > 0">
 			<p>Encountered unrecoverable errors:</p>
-			<pre v-for="(error, index) in errors" :key="index">{{
+			<pre v-for="(error, index) in errors" :key="index" role="alert">{{
 				displayError(error)
 			}}</pre>
 		</template>

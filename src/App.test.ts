@@ -161,7 +161,9 @@ describe("calendarEventsFile", () => {
 
 		// Assert
 		expect(mockElectronApi.writeCalendarFile).not.toHaveBeenCalled();
-		wrapper.getByText("Error: Error reading calendar file.");
+		expect(wrapper.getByRole("alert").textContent).contains(
+			"Error reading calendar file",
+		);
 	});
 
 	it("parses and provides the calendar event collection without writing it back out immediately", async () => {

@@ -1,29 +1,33 @@
 <template>
 	<DialogLayout title="Event" v-model:is-open="dialogOpen" @close="cancel()">
 		<div class="input-and-label">
-			<label :for="dateId">Date</label>
-			<input :id="dateId" type="date" v-model="dateModel" />
+			<label :for="getInputId('date')">Date</label>
+			<input :id="getInputId('date')" type="date" v-model="dateModel" />
 		</div>
 		<div class="input-and-label">
-			<label :for="summaryId">Summary</label>
+			<label :for="getInputId('summary')">Summary</label>
 			<input
-				:id="summaryId"
+				:id="getInputId('summary')"
 				type="text"
 				placeholder="Enter a summary"
 				v-model="eventModel.summary"
 			/>
 		</div>
 		<div class="input-and-label">
-			<input type="checkbox" v-model="allDayModel" :id="allDayId" />
-			<label :for="allDayId">All Day</label>
+			<input
+				type="checkbox"
+				v-model="allDayModel"
+				:id="getInputId('all-day')"
+			/>
+			<label :for="getInputId('all-day')">All Day</label>
 		</div>
 		<div class="input-and-label" v-if="!allDayModel">
-			<label :for="timeId">Time</label>
-			<input type="time" v-model="timeModel" :id="timeId" />
+			<label :for="getInputId('time')">Time</label>
+			<input type="time" v-model="timeModel" :id="getInputId('time')" />
 		</div>
 		<div class="input-and-label">
-			<label :for="recurranceFrequencyId">Repeats</label>
-			<select :id="recurranceFrequencyId" v-model="recurranceFrequency">
+			<label :for="getInputId('frequency')">Repeats</label>
+			<select :id="getInputId('frequency')" v-model="recurranceFrequency">
 				<option :value="undefined">Never</option>
 				<option
 					v-for="[optionValue, optionText] in Object.entries(
@@ -36,9 +40,48 @@
 				</option>
 			</select>
 		</div>
+		<div class="monthly-type" v-if="recurranceFrequency === 'MONTHLY'">
+			<div
+				class="input-and-label"
+				v-for="[value, label] in Object.entries(monthlyTypes)"
+				:key="value"
+			>
+				<input
+					type="radio"
+					:id="getInputId(`monthly-type-${value}`)"
+					:value="value"
+					v-model="monthlyType"
+				/>
+				<label :for="getInputId(`monthly-type-${value}`)">{{
+					label
+				}}</label>
+			</div>
+		</div>
+		<div
+			class="input-and-label"
+			v-if="eventModel.recurrenceRule?.byMonthday"
+		>
+			<label :for="getInputId('month-day')">Days of the Month</label>
+			<select
+				:id="getInputId('month-day')"
+				multiple
+				v-model="eventModel.recurrenceRule.byMonthday"
+			>
+				<option
+					v-for="dayOfMonth in 31"
+					:key="dayOfMonth"
+					:value="dayOfMonth"
+				>
+					{{ dayOfMonth }}
+				</option>
+			</select>
+		</div>
 		<DayOfWeekInput
 			v-if="eventModel.recurrenceRule?.byDay"
 			v-model="eventModel.recurrenceRule.byDay"
+			:specify-occurrence="
+				eventModel.recurrenceRule.frequency === 'MONTHLY'
+			"
 		/>
 		<template #footer>
 			<button @click="cancel()">Cancel</button>
@@ -63,6 +106,12 @@ const dialogOpen = ref(false);
 
 const eventModel = ref<IcsEvent>(getDefaultIcsEvent());
 
+const uniqueId = crypto.randomUUID();
+
+function getInputId(input: string): string {
+	return `${uniqueId}-${input}`;
+}
+
 let promiseResolver: ((result: EventEditDialogResult) => void) | undefined =
 	undefined;
 
@@ -81,7 +130,6 @@ const dateModel = computed({
 		);
 	},
 });
-const dateId = crypto.randomUUID();
 
 const allDayModel = computed({
 	get() {
@@ -100,7 +148,6 @@ const allDayModel = computed({
 		}
 	},
 });
-const allDayId = crypto.randomUUID();
 
 const timeModel = computed({
 	get() {
@@ -118,9 +165,6 @@ const timeModel = computed({
 		);
 	},
 });
-const timeId = crypto.randomUUID();
-
-const summaryId = crypto.randomUUID();
 
 const recurranceFrequency = computed({
 	get() {
@@ -140,12 +184,14 @@ const recurranceFrequency = computed({
 			eventModel.value.recurrenceRule.byDay = [
 				{ day: ICS_WEEKDAY_MAP[eventModel.value.start.date.getDay()] },
 			];
+		} else if (newValue === "MONTHLY") {
+			monthlyType.value = "dayOfMonth";
 		} else {
 			eventModel.value.recurrenceRule.byDay = undefined;
 		}
 	},
 });
-const recurranceFrequencyId = crypto.randomUUID();
+
 const recurranceFrequencyOptions: {
 	[Value in IcsRecurrenceRuleFrequency]?: string;
 } = {
@@ -154,6 +200,40 @@ const recurranceFrequencyOptions: {
 	MONTHLY: "Monthly",
 	YEARLY: "Annually",
 };
+
+const monthlyTypes = {
+	dayOfMonth: "Day of month",
+	other: "Weekday in month",
+};
+
+const monthlyType = computed<keyof typeof monthlyTypes>({
+	get() {
+		return eventModel.value.recurrenceRule?.byDay ? "other" : "dayOfMonth";
+	},
+	set(newValue) {
+		// This code isn't reachable by any user interactions it's only here to satisfy typescript.
+		/* c8 ignore start */
+		if (!eventModel.value.recurrenceRule) {
+			return;
+		}
+		/* c8 ignore stop */
+		const startDate = eventModel.value.start.date;
+		if (newValue === "dayOfMonth") {
+			eventModel.value.recurrenceRule.byDay = undefined;
+			eventModel.value.recurrenceRule.byMonthday = [startDate.getDate()];
+			return;
+		} else {
+			eventModel.value.recurrenceRule.byMonthday = undefined;
+			const occurrence = Math.ceil(startDate.getDate() / 7);
+			eventModel.value.recurrenceRule.byDay = [
+				{
+					day: ICS_WEEKDAY_MAP[startDate.getDay()],
+					occurrence: occurrence <= 4 ? occurrence : -1,
+				},
+			];
+		}
+	},
+});
 
 function cancel() {
 	promiseResolver?.({ action: EVENT_EDIT_DIALOG_ACTION.CANCEL });

@@ -2,7 +2,7 @@
 	<div>
 		<div
 			class="checkbox-and-label"
-			v-for="({ name, id }, index) in daysOfWeek"
+			v-for="({ name, id, weekdayDetails }, index) in daysOfWeek"
 			:key="name"
 		>
 			<input
@@ -11,6 +11,18 @@
 				:checked="isChecked(index)"
 				@change="toggle(index)"
 			/>
+			<select
+				v-if="weekdayDetails?.occurrence"
+				v-model="weekdayDetails.occurrence"
+			>
+				<option
+					v-for="{ label, value } in occurrenceOptions"
+					:key="value"
+					:value="value"
+				>
+					{{ label }}
+				</option>
+			</select>
 			<label :for="id">{{ name }}</label>
 		</div>
 	</div>
@@ -20,13 +32,37 @@
 import { ICS_WEEKDAY_MAP } from "@/calendar-events";
 import { getDaysOfWeek } from "@/dates";
 import { IcsWeekdayNumber } from "ts-ics";
+import { computed } from "vue";
 
 const selectedValues = defineModel<IcsWeekdayNumber[]>({ required: true });
 
-const daysOfWeek = getDaysOfWeek("long").map((name) => ({
-	name,
-	id: crypto.randomUUID(),
-}));
+const props = defineProps<{
+	/**
+	 * If this should specify the occurence for each day of the week selected.
+	 */
+	specifyOccurrence: boolean;
+}>();
+
+const uniqueId = crypto.randomUUID();
+const dayNames = getDaysOfWeek("long");
+
+const daysOfWeek = computed(() => {
+	return dayNames.map((name, index) => ({
+		name,
+		id: `${uniqueId}-${name}`,
+		weekdayDetails: selectedValues.value.find(
+			(weekday) => weekday.day === ICS_WEEKDAY_MAP[index],
+		),
+	}));
+});
+
+const occurrenceOptions: { label: string; value: number }[] = [
+	{ label: "First", value: 1 },
+	{ label: "Second", value: 2 },
+	{ label: "Third", value: 3 },
+	{ label: "Fourth", value: 4 },
+	{ label: "Last", value: -1 },
+];
 
 function isChecked(dayNumber: number): boolean {
 	return (
@@ -53,7 +89,10 @@ function toggle(dayNumber: number): void {
 	if (foundIndex >= 0) {
 		newValue.splice(foundIndex, 1);
 	} else {
-		newValue.push({ day: ICS_WEEKDAY_MAP[dayNumber] });
+		newValue.push({
+			day: ICS_WEEKDAY_MAP[dayNumber],
+			occurrence: props.specifyOccurrence ? 1 : undefined,
+		});
 	}
 	selectedValues.value = newValue;
 }

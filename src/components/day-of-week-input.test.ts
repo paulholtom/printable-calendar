@@ -27,7 +27,7 @@ it("displays a checkbox for each day of the week", () => {
 	// Arrange
 	// Act
 	const wrapper = render(DayOfWeekInput, {
-		props: { modelValue: [] },
+		props: { modelValue: [], specifyOccurrence: false },
 	});
 
 	// Assert
@@ -46,6 +46,7 @@ it("sets a selected value in the model value", async () => {
 				modelValue = newValue;
 				wrapper.rerender({ modelValue });
 			},
+			specifyOccurrence: false,
 		},
 	});
 
@@ -55,6 +56,52 @@ it("sets a selected value in the model value", async () => {
 
 	// Assert
 	const expected: IcsWeekdayNumber[] = [{ day: "SU" }];
+	expect(modelValue).toEqual(expected);
+});
+
+it("includes an occurrence value in created values if specifyOccurrence is true", async () => {
+	// Arrange
+	let modelValue: IcsWeekdayNumber[] = [];
+	const wrapper = render(DayOfWeekInput, {
+		props: {
+			modelValue,
+			"onUpdate:modelValue": (newValue) => {
+				modelValue = newValue;
+				wrapper.rerender({ modelValue });
+			},
+			specifyOccurrence: true,
+		},
+	});
+
+	// Act
+	const dayCheck = wrapper.getByRole("checkbox", { name: DAYS_OF_WEEK[0] });
+	await fireEvent.click(dayCheck);
+
+	// Assert
+	const expected: IcsWeekdayNumber[] = [{ day: "SU", occurrence: 1 }];
+	expect(modelValue).toEqual(expected);
+});
+
+it("updates occurrence values", async () => {
+	// Arrange
+	let modelValue: IcsWeekdayNumber[] = [{ day: "SU", occurrence: 1 }];
+	const wrapper = render(DayOfWeekInput, {
+		props: {
+			modelValue,
+			"onUpdate:modelValue": (newValue) => {
+				modelValue = newValue;
+				wrapper.rerender({ modelValue });
+			},
+			specifyOccurrence: true,
+		},
+	});
+
+	// Act
+	const occurenceInput = wrapper.getByRole("combobox");
+	await fireEvent.update(occurenceInput, "2");
+
+	// Assert
+	const expected: IcsWeekdayNumber[] = [{ day: "SU", occurrence: 2 }];
 	expect(modelValue).toEqual(expected);
 });
 
@@ -68,6 +115,7 @@ it("sets multiple selected values in the model value", async () => {
 				modelValue = newValue;
 				wrapper.rerender({ modelValue });
 			},
+			specifyOccurrence: false,
 		},
 	});
 
@@ -96,6 +144,7 @@ it("removes already selected values", async () => {
 				modelValue = newValue;
 				wrapper.rerender({ modelValue });
 			},
+			specifyOccurrence: false,
 		},
 	});
 
