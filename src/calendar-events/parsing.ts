@@ -26,9 +26,7 @@ export function getDefaultIcsEvent(): IcsEvent {
 /**
  * A collection of differently grouped events.
  */
-export type IcsCalendarCollection = Record<string, IcsCalendar | undefined> & {
-	default: IcsCalendar;
-};
+export type IcsCalendarCollection = Record<string, IcsCalendar | undefined>;
 
 export function getDefaultIcsCalendar(): IcsCalendar {
 	return {
@@ -41,7 +39,7 @@ export function getDefaultIcsCalendar(): IcsCalendar {
  * @returns A default calendar event collection.
  */
 export function getDefaultIcsCalendarCollection(): IcsCalendarCollection {
-	return { default: getDefaultIcsCalendar() };
+	return {};
 }
 
 /**

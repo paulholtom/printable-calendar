@@ -1,5 +1,24 @@
 <template>
-	<DialogLayout title="Event" v-model:is-open="dialogOpen" @close="cancel()">
+	<DialogLayout
+		title="Event"
+		v-model:is-open="dialogOpen"
+		@close="cancel()"
+		:include-close-button="true"
+	>
+		<AlertDialog ref="alertDialog" />
+		<ConfirmDialog ref="confirmDialog" />
+		<div class="input-and-label">
+			<label :for="getInputId('calendar')">Calendar</label>
+			<select v-model="calendar">
+				<option
+					v-for="calendarName in calendarNames"
+					:key="calendarName"
+					:value="calendarName"
+				>
+					{{ calendarName }}
+				</option>
+			</select>
+		</div>
 		<div class="input-and-label">
 			<label :for="getInputId('date')">Date</label>
 			<input :id="getInputId('date')" type="date" v-model="dateModel" />
@@ -94,15 +113,22 @@
 <script setup lang="ts">
 import { getDefaultIcsEvent, ICS_WEEKDAY_MAP } from "@/calendar-events";
 import { IcsEvent, IcsRecurrenceRuleFrequency } from "ts-ics";
-import { computed, ref, toRaw } from "vue";
+import { computed, ref, toRaw, useTemplateRef } from "vue";
+import AlertDialog from "./alert-dialog.vue";
+import ConfirmDialog from "./confirm-dialog.vue";
 import DayOfWeekInput from "./day-of-week-input.vue";
 import DialogLayout from "./dialog-layout.vue";
 import {
 	EVENT_EDIT_DIALOG_ACTION,
+	EventEditDialogOptions,
 	EventEditDialogResult,
-} from "./event-edit-dialog-result";
-
+} from "./event-edit-dialog-types";
+const alertDialog = useTemplateRef("alertDialog");
+const confirmDialog = useTemplateRef("confirmDialog");
 const dialogOpen = ref(false);
+
+const calendar = ref<string>("");
+const calendarNames = ref<string[]>([]);
 
 const eventModel = ref<IcsEvent>(getDefaultIcsEvent());
 
@@ -242,8 +268,12 @@ function cancel() {
 	dialogOpen.value = false;
 }
 
-function deleteEvent() {
-	if (confirm("Are you sure you want to delete this event?")) {
+async function deleteEvent() {
+	if (
+		await confirmDialog.value?.show(
+			"Are you sure you want to delete this event?",
+		)
+	) {
 		promiseResolver?.({ action: EVENT_EDIT_DIALOG_ACTION.DELETE });
 		promiseResolver = undefined;
 		dialogOpen.value = false;
@@ -252,13 +282,15 @@ function deleteEvent() {
 
 function save(): void {
 	if (eventModel.value.summary.trim() === "") {
-		alert("You need to enter a summary.");
+		alertDialog.value?.show("You need to enter a summary.");
 		return;
 	}
+	console.log(eventModel.value.start.date);
 
 	promiseResolver?.({
 		action: EVENT_EDIT_DIALOG_ACTION.SAVE,
 		event: structuredClone(toRaw(eventModel.value)),
+		calendarName: calendar.value,
 	});
 	promiseResolver = undefined;
 
@@ -272,9 +304,11 @@ const allowDelete = ref(false);
  *
  * @returns Promise that resolves with the details of the user's actions in the dialog.
  */
-function createNewEvent(event: IcsEvent): Promise<EventEditDialogResult> {
+function createNewEvent(
+	options: EventEditDialogOptions,
+): Promise<EventEditDialogResult> {
 	allowDelete.value = false;
-	return setupForEvent(event);
+	return setupForEvent(options);
 }
 
 /**
@@ -283,13 +317,20 @@ function createNewEvent(event: IcsEvent): Promise<EventEditDialogResult> {
  * @param event The event to be updated.
  * @returns Promise that resolves with the details of the user's actions in the dialog.
  */
-function updateEvent(event: IcsEvent): Promise<EventEditDialogResult> {
+function updateEvent(
+	options: EventEditDialogOptions,
+): Promise<EventEditDialogResult> {
 	allowDelete.value = true;
-	return setupForEvent(event);
+	return setupForEvent(options);
 }
 
-function setupForEvent(event: IcsEvent): Promise<EventEditDialogResult> {
-	eventModel.value = structuredClone(toRaw(event));
+function setupForEvent(
+	options: EventEditDialogOptions,
+): Promise<EventEditDialogResult> {
+	eventModel.value = structuredClone(toRaw(options.event));
+
+	calendar.value = options.calendarOptions.sourceCalendar;
+	calendarNames.value = options.calendarOptions.calendarNames;
 
 	const { resolve, promise } = Promise.withResolvers<EventEditDialogResult>();
 	promiseResolver = resolve;

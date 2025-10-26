@@ -1,3 +1,5 @@
+import type { CalendarFileContents } from "./calendar-events";
+
 export interface ElectronApi {
 	/**
 	 * Reads the user config file.
@@ -13,18 +15,25 @@ export interface ElectronApi {
 	 */
 	writeUserConfigFile(contents: string): Promise<void>;
 	/**
-	 * Write to the calendar file.
+	 * Write to the specified calendar file.
 	 *
+	 * @param directory The directory to write the file to.
+	 * @param calendarName The name of the calendar.
 	 * @param contents The contents of the file to be written.
 	 * @returns A promise that resolves when the file is successfully written.
 	 */
-	writeCalendarFile(contents: string): Promise<void>;
+	writeCalendarFile(
+		directory: string,
+		calendarName: string,
+		contents: string,
+	): Promise<void>;
 	/**
-	 * Reads the calendar file.
+	 * Reads all of the calendar files in a driector.
 	 *
+	 * @param directory The directory to read the calendar files from.
 	 * @returns A promise that resolves to the contents of the file or undefined if the file couldn't be read.
 	 */
-	readCalendarFile(): Promise<string | undefined>;
+	readCalendarFiles(directory: string): Promise<CalendarFileContents>;
 	/**
 	 * Create a PDF of the current page.
 	 *
@@ -35,9 +44,10 @@ export interface ElectronApi {
 	/**
 	 * Select a directory on the user's computer.
 	 *
+	 * @param title The title to show in the dialog for selecting a directory.
 	 * @returns A promise that resolves to a directory path or undefined if the user didn't select one.
 	 */
-	selectDirectory(): Promise<string | undefined>;
+	selectDirectory(title: string): Promise<string | undefined>;
 	/**
 	 * Close the window that triggered this event.
 	 */
@@ -50,7 +60,7 @@ export interface ElectronApi {
 export enum ELECTRON_API_EVENTS {
 	READ_CONFIG_FILE = "read-config-file",
 	WRITE_CONFIG_FILE = "write-config-file",
-	READ_CALENDAR_FILE = "read-calendar-file",
+	READ_CALENDAR_FILES = "read-calendar-files",
 	WRITE_CALENDAR_FILE = "write-calendar-file",
 	PRINT_PDF = "print-pdf",
 	SELECT_DIRECTORY = "select-directory",

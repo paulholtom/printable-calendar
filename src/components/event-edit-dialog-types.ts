@@ -39,4 +39,33 @@ export type EventEditDialogResult =
 			 * The event to be saved.
 			 */
 			event: IcsEvent;
+			/**
+			 * The calendar this event should be on.
+			 */
+			calendarName: string;
 	  };
+
+type EventEditDialogCalendarOptions = {
+	/**
+	 * The calendar this event is for.
+	 */
+	sourceCalendar: string;
+	/**
+	 * The names of the available calendars.
+	 */
+	calendarNames: string[];
+};
+
+/**
+ * Options for how the event edit dialog will function when opened.
+ */
+export type EventEditDialogOptions = {
+	/**
+	 * The event to be edited.
+	 */
+	event: IcsEvent;
+	/**
+	 * Options for setting the calendar the event is for.
+	 */
+	calendarOptions: EventEditDialogCalendarOptions;
+};

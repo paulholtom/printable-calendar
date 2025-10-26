@@ -66,7 +66,7 @@ describe("writeUserConfigFile", () => {
 });
 
 describe("readCalendarEventsFile", () => {
-	it(`invokes ${ELECTRON_API_EVENTS.READ_CALENDAR_FILE}`, async () => {
+	it(`invokes ${ELECTRON_API_EVENTS.READ_CALENDAR_FILES}`, async () => {
 		// Arrange
 		const electronApi = getElectronApi();
 
@@ -75,7 +75,7 @@ describe("readCalendarEventsFile", () => {
 
 		// Assert
 		expect(ipcRenderer.invoke).toHaveBeenCalledWith(
-			ELECTRON_API_EVENTS.READ_CALENDAR_FILE,
+			ELECTRON_API_EVENTS.READ_CALENDAR_FILES,
 		);
 	});
 });

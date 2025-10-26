@@ -51,7 +51,7 @@ const lastDisplayDate = computed(
 
 const eventsByDate = computed(() => {
 	return getEventsByDateFromCalendarCollection(
-		calendarCollection,
+		calendarCollection.value,
 		firstDisplayDate.value,
 		lastDisplayDate.value,
 	);

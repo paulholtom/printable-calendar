@@ -1,6 +1,7 @@
 import { app } from "electron";
 import fs from "node:fs";
 import path from "node:path";
+import { getDefaultUserConfig } from ".";
 
 export const CONFIG_FILE_NAME = "user-config.json";
 
@@ -11,14 +12,18 @@ function getConfigFileFullPath(): string {
 export function readConfigFile(): Promise<string> {
 	const { promise, resolve } = Promise.withResolvers<string>();
 
-	fs.readFile(getConfigFileFullPath(), (err, data) => {
-		if (err) {
-			resolve("");
-			return;
-		}
+	if (!fs.existsSync(getConfigFileFullPath())) {
+		resolve(JSON.stringify(getDefaultUserConfig()));
+	} else {
+		fs.readFile(getConfigFileFullPath(), (err, data) => {
+			if (err) {
+				resolve("");
+				return;
+			}
 
-		resolve(data.toString());
-	});
+			resolve(data.toString());
+		});
+	}
 	return promise;
 }
 

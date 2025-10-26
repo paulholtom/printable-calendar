@@ -13,7 +13,7 @@ import path from "node:path";
 import { updateElectronApp } from "update-electron-app";
 import iconPath from "./assets/calendar.png";
 import {
-	readCalendarFile,
+	readCalendarFiles,
 	writeCalendarFile,
 } from "./calendar-events/file-access";
 import { ELECTRON_API_EVENTS } from "./electron-api";
@@ -51,6 +51,21 @@ const createWindow = () => {
 	}
 };
 
+function validateArguments(
+	functionName: string,
+	expectedTypes: string[],
+	argumentsToValidate: unknown[],
+) {
+	const received = argumentsToValidate.map((arg) => typeof arg).toString();
+	const expected = expectedTypes.toString();
+
+	if (expected !== received) {
+		throw new Error(
+			`Invalid arguments to ${functionName}. Expected [${expected}], got [${received}]`,
+		);
+	}
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -59,32 +74,38 @@ app.whenReady().then(() => {
 	ipcMain.handle(
 		ELECTRON_API_EVENTS.WRITE_CONFIG_FILE,
 		async (_, ...args) => {
-			if (args.length !== 1 || typeof args[0] !== "string") {
-				throw new Error(
-					`Invalid arguments to ${ELECTRON_API_EVENTS.WRITE_CONFIG_FILE}. Expected [string], got [${args.map((arg) => typeof arg)}]`,
-				);
-			}
+			validateArguments(
+				ELECTRON_API_EVENTS.WRITE_CONFIG_FILE,
+				["string"],
+				args,
+			);
 			return writeConfigFile(args[0]);
 		},
 	);
-	ipcMain.handle(ELECTRON_API_EVENTS.READ_CALENDAR_FILE, readCalendarFile);
+	ipcMain.handle(
+		ELECTRON_API_EVENTS.READ_CALENDAR_FILES,
+		async (_, ...args) => {
+			validateArguments(
+				ELECTRON_API_EVENTS.READ_CALENDAR_FILES,
+				["string"],
+				args,
+			);
+			return readCalendarFiles(args[0]);
+		},
+	);
 	ipcMain.handle(
 		ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE,
 		async (_, ...args) => {
-			if (args.length !== 1 || typeof args[0] !== "string") {
-				throw new Error(
-					`Invalid arguments to ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}. Expected [string], got [${args.map((arg) => typeof arg)}]`,
-				);
-			}
-			return writeCalendarFile(args[0]);
+			validateArguments(
+				ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE,
+				["string", "string", "string"],
+				args,
+			);
+			return writeCalendarFile(args[0], args[1], args[2]);
 		},
 	);
 	ipcMain.handle(ELECTRON_API_EVENTS.PRINT_PDF, async (event, ...args) => {
-		if (args.length !== 1 || typeof args[0] !== "string") {
-			throw new Error(
-				`Invalid arguments to ${ELECTRON_API_EVENTS.PRINT_PDF}. Expected [string], got [${args.map((arg) => typeof arg)}]`,
-			);
-		}
+		validateArguments(ELECTRON_API_EVENTS.PRINT_PDF, ["string"], args);
 
 		function buildFilePath(
 			splitPath: path.ParsedPath,
@@ -110,8 +131,14 @@ app.whenReady().then(() => {
 		await fsPromises.writeFile(filePath, pdfData);
 		return filePath;
 	});
-	ipcMain.handle(ELECTRON_API_EVENTS.SELECT_DIRECTORY, async () => {
+	ipcMain.handle(ELECTRON_API_EVENTS.SELECT_DIRECTORY, async (_, ...args) => {
+		validateArguments(
+			ELECTRON_API_EVENTS.SELECT_DIRECTORY,
+			["string"],
+			args,
+		);
 		const result = await dialog.showOpenDialog({
+			title: args[0],
 			properties: ["openDirectory", "createDirectory"],
 		});
 		if (result.canceled) {

@@ -53,13 +53,11 @@ describe(parseUserConfig, () => {
 		expect(result).toEqual(expected);
 	});
 
-	it("returns a default object if the value is invalid", () => {
+	it("throws an error if the value is invalid", () => {
 		// Arrange
 		// Act
-		const result = parseUserConfig("");
-
 		// Assert
-		expect(result).toEqual(getDefaultUserConfig());
+		expect(() => parseUserConfig("")).toThrowError();
 	});
 });
 

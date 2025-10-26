@@ -2,34 +2,55 @@ import { displayDate } from "@/dates";
 import { inject, InjectionKey, provide, Ref } from "vue";
 import { z } from "zod";
 
-export const userConfig = z.object({
-	version: z.object({
-		major: z.number(),
-		minor: z.number(),
-		patch: z.number(),
-	}),
-	pdfDirectory: z.string().optional(),
-	displayDate: displayDate,
+/**
+ * Options for a calendar.
+ */
+const calendarOptions = z.object({
+	/**
+	 * If events from this calendar should be disabled.
+	 */
+	disabled: z.boolean(),
 });
 
-export type UserConfig = z.infer<typeof userConfig>;
+/**
+ * Options for a calendar.
+ */
+export type CalendarOptions = z.infer<typeof calendarOptions>;
+
+const userConfig_v1_0_0 = z.object({
+	version: z.literal("1.0.0"),
+	pdfDirectory: z.string().optional(),
+	calendarDirectory: z.string().optional(),
+	displayDate: displayDate,
+	calendars: z.record(z.string(), z.union([calendarOptions, z.undefined()])),
+});
+
+const userConfigParser = z.union([userConfig_v1_0_0]);
+
+export type UserConfig = z.infer<typeof userConfig_v1_0_0>;
 
 export function getDefaultUserConfig(): UserConfig {
 	const currentDate = new Date();
 	return {
-		version: { major: 1, minor: 0, patch: 0 },
+		version: "1.0.0",
 		displayDate: {
 			month: currentDate.getMonth(),
 			year: currentDate.getFullYear(),
 		},
+		calendars: {},
 	};
 }
 
+/**
+ * @param unparsed The JSON string for the file.
+ * @returns The string parsed and validated.
+ * @throws If there is any errors parsing or validating the config file.
+ */
 export function parseUserConfig(unparsed: string): UserConfig {
 	try {
-		return userConfig.parse(JSON.parse(unparsed));
-	} catch {
-		return getDefaultUserConfig();
+		return userConfigParser.parse(JSON.parse(unparsed));
+	} catch (err) {
+		throw new Error("Error reading config file.", { cause: err });
 	}
 }
 

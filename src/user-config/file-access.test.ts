@@ -1,7 +1,9 @@
 import { app } from "electron";
 import mockFs from "mock-fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getDefaultUserConfig } from ".";
 import {
 	CONFIG_FILE_NAME,
 	readConfigFile,
@@ -20,7 +22,7 @@ beforeEach(() => {
 });
 
 describe(readConfigFile, () => {
-	it("returns an empty string if the file doesn't exist", async () => {
+	it("returns a default config if the file doesn't exist", async () => {
 		// Arrange
 		mockFs({});
 
@@ -28,7 +30,23 @@ describe(readConfigFile, () => {
 		const result = await readConfigFile();
 
 		// Assert
-		expect(result).toEqual("");
+		expect(result).toEqual(JSON.stringify(getDefaultUserConfig()));
+	});
+
+	it("returns the file exists but can't be read", async () => {
+		// Arrange
+		mockFs({
+			[join(FAKE_HOME_DIRECTORY, CONFIG_FILE_NAME)]: mockFs.file({
+				content: "some-content",
+				mode: 0,
+			}),
+		});
+
+		// Act
+		const result = await readConfigFile();
+
+		// Assert
+		expect(result).toBe("");
 	});
 
 	it("returns the file contents if it exists", async () => {
@@ -56,6 +74,9 @@ describe(writeConfigFile, () => {
 		await writeConfigFile(expectedContents);
 
 		// Assert
-		expect(await readConfigFile()).toEqual(expectedContents);
+		const fileContents = readFileSync(
+			join(FAKE_HOME_DIRECTORY, CONFIG_FILE_NAME),
+		).toString();
+		expect(fileContents).toEqual(expectedContents);
 	});
 });

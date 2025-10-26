@@ -81,7 +81,7 @@ const eventsByDate = computed(() => {
 	return (
 		props.parentEventsByDate ??
 		getEventsByDateFromCalendarCollection(
-			calendarCollection,
+			calendarCollection.value,
 			firstDisplayDate.value,
 			lastDisplayDate.value,
 		)

@@ -13,12 +13,17 @@ const electronApi: ElectronApi = {
 			contents,
 		);
 	},
-	readCalendarFile() {
-		return ipcRenderer.invoke(ELECTRON_API_EVENTS.READ_CALENDAR_FILE);
+	readCalendarFiles(directory) {
+		return ipcRenderer.invoke(
+			ELECTRON_API_EVENTS.READ_CALENDAR_FILES,
+			directory,
+		);
 	},
-	writeCalendarFile(contents) {
+	writeCalendarFile(directory, calendarName, contents) {
 		return ipcRenderer.invoke(
 			ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE,
+			directory,
+			calendarName,
 			contents,
 		);
 	},
@@ -28,8 +33,8 @@ const electronApi: ElectronApi = {
 			fileNameAndPath,
 		);
 	},
-	selectDirectory() {
-		return ipcRenderer.invoke(ELECTRON_API_EVENTS.SELECT_DIRECTORY);
+	selectDirectory(title) {
+		return ipcRenderer.invoke(ELECTRON_API_EVENTS.SELECT_DIRECTORY, title);
 	},
 	closeWindow() {
 		return ipcRenderer.invoke(ELECTRON_API_EVENTS.CLOSE_WINDOW);

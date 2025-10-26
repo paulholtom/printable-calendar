@@ -7,7 +7,7 @@ import { defineComponent, PropType } from "vue";
 import {
 	EVENT_EDIT_DIALOG_ACTION,
 	EventEditDialogResult,
-} from "./event-edit-dialog-result";
+} from "./event-edit-dialog-types";
 import EventEditDialog from "./event-edit-dialog.vue";
 
 vi.mock(import("@/dates"));

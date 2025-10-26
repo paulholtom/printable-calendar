@@ -3,7 +3,7 @@ import mockFs from "mock-fs";
 import { writeFile } from "node:fs/promises";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	readCalendarFile,
+	readCalendarFiles,
 	writeCalendarFile,
 } from "./calendar-events/file-access";
 import { ELECTRON_API_EVENTS } from "./electron-api";
@@ -164,20 +164,31 @@ describe(`ipcMain handle ${ELECTRON_API_EVENTS.WRITE_CONFIG_FILE}`, () => {
 	});
 });
 
-describe(`ipcMain handle ${ELECTRON_API_EVENTS.READ_CALENDAR_FILE}`, () => {
-	const readCalendarFileCallback = getCallback(
-		ELECTRON_API_EVENTS.READ_CALENDAR_FILE,
+describe(`ipcMain handle ${ELECTRON_API_EVENTS.READ_CALENDAR_FILES}`, () => {
+	const readCalendarFilesCallback = getCallback(
+		ELECTRON_API_EVENTS.READ_CALENDAR_FILES,
 		ipcMain.handle,
 	);
 
-	it(`calls the ${readCalendarFile.name} function`, () => {
+	it(`calls the ${readCalendarFiles.name} function`, () => {
 		// Arrange
 
 		// Act
-		readCalendarFileCallback();
+		readCalendarFilesCallback({}, "test");
 
 		// Assert
-		expect(readCalendarFile).toHaveBeenCalled();
+		expect(readCalendarFiles).toHaveBeenCalledWith("test");
+	});
+
+	it("throws an error for invalid arguments", async () => {
+		// Arrange
+		// Act
+		const act = async () => await readCalendarFilesCallback({}, 5);
+
+		// Assert
+		await expect(act).rejects.toThrowError(
+			`Invalid arguments to ${ELECTRON_API_EVENTS.READ_CALENDAR_FILES}. Expected [string], got [number]`,
+		);
 	});
 });
 
@@ -189,46 +200,24 @@ describe(`ipcMain handle ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}`, () => {
 
 	it(`calls the ${writeCalendarFile.name} function`, async () => {
 		// Arrange
+		const fileName = "file-name";
 		const contents = "some-content";
 
 		// Act
-		await writeCalendarFileCallback({}, contents);
+		await writeCalendarFileCallback({}, fileName, contents);
 
 		// Assert
-		expect(writeCalendarFile).toHaveBeenCalledWith(contents);
+		expect(writeCalendarFile).toHaveBeenCalledWith(fileName, contents);
 	});
 
-	it("throws an error if there are no arguments", async () => {
+	it("throws an error for invalid arguments", async () => {
 		// Arrange
 		// Act
-		const act = async () => await writeCalendarFileCallback({});
+		const act = async () => await writeCalendarFileCallback({}, 5, "test");
 
 		// Assert
 		await expect(act).rejects.toThrowError(
-			`Invalid arguments to ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}. Expected [string], got []`,
-		);
-	});
-
-	it("throws an error if the argument is the wrong type", async () => {
-		// Arrange
-		// Act
-		const act = async () => await writeCalendarFileCallback({}, 5);
-
-		// Assert
-		await expect(act).rejects.toThrowError(
-			`Invalid arguments to ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}. Expected [string], got [number]`,
-		);
-	});
-
-	it("throws an error if there are extra arguments", async () => {
-		// Arrange
-		// Act
-		const act = async () =>
-			await writeCalendarFileCallback({}, "test", "test");
-
-		// Assert
-		await expect(act).rejects.toThrowError(
-			`Invalid arguments to ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}. Expected [string], got [string,string]`,
+			`Invalid arguments to ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}. Expected [string,string], got [number,string]`,
 		);
 	});
 });
@@ -334,31 +323,52 @@ describe(`ipcMain handle ${ELECTRON_API_EVENTS.SELECT_DIRECTORY}`, () => {
 		ipcMain.handle,
 	);
 
+	it("throws an error if invalid arguments are provided", async () => {
+		// Arrange
+		// Act
+		const act = async () => await selectDirectoryCallback({}, 5);
+
+		// Assert
+		await expect(act).rejects.toThrowError(
+			`Invalid arguments to ${ELECTRON_API_EVENTS.SELECT_DIRECTORY}. Expected [string], got [number]`,
+		);
+	});
+
 	it("returns undefined if the user cancels", async () => {
 		// Arrange
+		const title = "some-title";
 		vi.mocked(dialog.showOpenDialog).mockResolvedValueOnce({
 			canceled: true,
 			filePaths: [],
 		});
 
 		// Act
-		const result = await selectDirectoryCallback();
+		const result = await selectDirectoryCallback({}, title);
 
 		// Assert
+		expect(dialog.showOpenDialog).toHaveBeenCalledWith({
+			title,
+			properties: ["openDirectory", "createDirectory"],
+		});
 		expect(result).toBeUndefined();
 	});
 
 	it("returns the first selected file path", async () => {
 		// Arrange
+		const title = "some-title";
 		vi.mocked(dialog.showOpenDialog).mockResolvedValueOnce({
 			canceled: false,
 			filePaths: ["some-file-path"],
 		});
 
 		// Act
-		const result = await selectDirectoryCallback();
+		const result = await selectDirectoryCallback({}, title);
 
 		// Assert
+		expect(dialog.showOpenDialog).toHaveBeenCalledWith({
+			title,
+			properties: ["openDirectory", "createDirectory"],
+		});
 		expect(result).toBe("some-file-path");
 	});
 });

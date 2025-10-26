@@ -4,6 +4,7 @@
 			<header class="dialog-header">
 				{{ title }}
 				<button
+					v-if="includeCloseButton"
 					class="close-button"
 					@click="close()"
 					aria-label="Close"
@@ -30,6 +31,10 @@ defineProps<{
 	 * The title of the dialog.
 	 */
 	title: string;
+	/**
+	 * If the close button should be included.
+	 */
+	includeCloseButton: boolean;
 }>();
 
 const emit = defineEmits<{ close: [] }>();

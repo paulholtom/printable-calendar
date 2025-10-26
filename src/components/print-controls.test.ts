@@ -16,7 +16,7 @@ const mockElectronApi = {
 	printToPdf: vi.fn(),
 	selectDirectory: vi.fn(),
 	writeCalendarFile: vi.fn(),
-	readCalendarFile: vi.fn(),
+	readCalendarFiles: vi.fn(),
 	closeWindow: vi.fn(),
 } satisfies ElectronApi;
 

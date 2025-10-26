@@ -1,14 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { inject, provide } from "vue";
+import { inject, provide, ref } from "vue";
 import {
 	ICS_CALENDAR_COLLECTION_KEY,
 	provideIcsCalendarCollection,
 	useIcsCalendarCollection,
 } from "./injection";
-import {
-	IcsCalendarCollection,
-	getDefaultIcsCalendarCollection,
-} from "./parsing";
+import { getDefaultIcsCalendarCollection } from "./parsing";
 
 vi.mock(import("vue"));
 
@@ -19,8 +16,7 @@ beforeEach(() => {
 describe(provideIcsCalendarCollection, () => {
 	it("provides the calendar event collection", () => {
 		// Arrange
-		const eventCollection: IcsCalendarCollection =
-			getDefaultIcsCalendarCollection();
+		const eventCollection = ref(getDefaultIcsCalendarCollection());
 
 		// Act
 		provideIcsCalendarCollection(eventCollection);
