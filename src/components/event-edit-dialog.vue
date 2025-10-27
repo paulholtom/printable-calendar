@@ -285,7 +285,6 @@ function save(): void {
 		alertDialog.value?.show("You need to enter a summary.");
 		return;
 	}
-	console.log(eventModel.value.start.date);
 
 	promiseResolver?.({
 		action: EVENT_EDIT_DIALOG_ACTION.SAVE,
