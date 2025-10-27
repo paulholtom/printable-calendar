@@ -1,3 +1,4 @@
+import { getDefaultUserConfig, UserConfig } from "@/user-config";
 import { IcsEvent } from "ts-ics";
 import { describe, expect, it } from "vitest";
 import {
@@ -126,6 +127,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 		// Act
 		const result = getEventsByDateFromCalendarCollection(
 			calendar,
+			getDefaultUserConfig(),
 			RANGE_START,
 			RANGE_END,
 		);
@@ -151,6 +153,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 		// Act
 		const result = getEventsByDateFromCalendarCollection(
 			calendarCollection,
+			getDefaultUserConfig(),
 			RANGE_START,
 			RANGE_END,
 		);
@@ -176,6 +179,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 		// Act
 		const result = getEventsByDateFromCalendarCollection(
 			calendarCollection,
+			getDefaultUserConfig(),
 			RANGE_START,
 			RANGE_END,
 		);
@@ -188,6 +192,56 @@ describe(getEventsByDateFromCalendarCollection, () => {
 						date: new Date(2025, 5, 7),
 						sourceCalendar: "default",
 						event,
+					},
+				],
+			}),
+		);
+	});
+
+	it("doesn't include events in disabled calendars", () => {
+		// Arrange
+		const eventValid: IcsEvent = {
+			...getDefaultIcsEvent(),
+			start: { date: new Date(2025, 5, 7) },
+		};
+		const eventDisabled: IcsEvent = {
+			...getDefaultIcsEvent(),
+			start: { date: new Date(2025, 5, 7) },
+		};
+		const calendarCollection: IcsCalendarCollection = {
+			...getDefaultIcsCalendarCollection(),
+			default: {
+				...getDefaultIcsCalendar(),
+				events: [eventValid],
+			},
+			other: {
+				...getDefaultIcsCalendar(),
+				events: [eventDisabled],
+			},
+		};
+		const userConfig: UserConfig = {
+			...getDefaultUserConfig(),
+			calendars: {
+				other: { disabled: true },
+			},
+		};
+
+		// Act
+		const result = getEventsByDateFromCalendarCollection(
+			calendarCollection,
+			userConfig,
+			RANGE_START,
+			RANGE_END,
+		);
+
+		// Assert
+		expect(result).toEqual(
+			createExpectedEventsByDate({
+				7: [
+					{
+						date: new Date(2025, 5, 7),
+						sourceCalendar: "default",
+						event: eventValid,
 					},
 				],
 			}),
@@ -215,6 +269,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 		// Act
 		const result = getEventsByDateFromCalendarCollection(
 			calendarCollection,
+			getDefaultUserConfig(),
 			RANGE_START,
 			RANGE_END,
 		);
@@ -261,6 +316,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 		// Act
 		const result = getEventsByDateFromCalendarCollection(
 			calendarCollection,
+			getDefaultUserConfig(),
 			RANGE_START,
 			RANGE_END,
 		);
@@ -318,6 +374,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 		// Act
 		const result = getEventsByDateFromCalendarCollection(
 			calendarCollection,
+			getDefaultUserConfig(),
 			new Date(2025, 9, 25),
 			new Date(2025, 9, 26),
 		);

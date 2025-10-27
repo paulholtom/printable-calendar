@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import path, { join } from "node:path";
+import path from "node:path";
 import { CalendarFileContents } from "./calendar-file-types";
 
 /**
@@ -58,7 +58,7 @@ export function writeCalendarFile(
 	contents: string,
 ): Promise<void> {
 	const { promise, resolve } = Promise.withResolvers<void>();
-	fs.writeFile(join(directory, `${calendarName}.ics`), contents, () => {
+	fs.writeFile(path.join(directory, `${calendarName}.ics`), contents, () => {
 		resolve();
 	});
 	return promise;

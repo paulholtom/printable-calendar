@@ -95,7 +95,7 @@ describe(writeCalendarFile, () => {
 		mockFs({ [directory]: {} });
 
 		// Act
-		await writeCalendarFile(filePath, expectedContents);
+		await writeCalendarFile(directory, calendarName, expectedContents);
 
 		// Assert
 		const fileContents = await readFileSync(filePath).toString();
