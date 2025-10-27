@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, PropType } from "vue";
 import {
 	EVENT_EDIT_DIALOG_ACTION,
+	EventEditDialogOptions,
 	EventEditDialogResult,
 } from "./event-edit-dialog-types";
 import EventEditDialog from "./event-edit-dialog.vue";
@@ -31,22 +32,27 @@ const TestingComponent = defineComponent({
 		<EventEditDialog ref="eventEditDialog" />
 	</div>`,
 	props: {
-		event: Object as PropType<IcsEvent>,
+		options: {
+			required: true,
+			type: Object as PropType<EventEditDialogOptions>,
+		},
 	},
 	emits: ["dialogResult"],
 	methods: {
 		async create() {
-			const event: IcsEvent = this.$props.event ?? getDefaultIcsEvent();
 			this.$emit(
 				"dialogResult",
-				await this.$refs.eventEditDialog.createNewEvent(event),
+				await this.$refs.eventEditDialog.createNewEvent(
+					this.$props.options,
+				),
 			);
 		},
 		async update() {
-			const event = this.$props.event ?? getDefaultIcsEvent();
 			this.$emit(
 				"dialogResult",
-				await this.$refs.eventEditDialog.updateEvent(event),
+				await this.$refs.eventEditDialog.updateEvent(
+					this.$props.options,
+				),
 			);
 		},
 	},
@@ -77,12 +83,10 @@ it("doesn't display the dialog initially", () => {
 
 async function callComponentFunction(
 	functionName: "createNewEvent" | "updateEvent",
-	event: IcsEvent,
+	options: EventEditDialogOptions,
 ): Promise<RenderResult> {
-	// Arrange
-	const wrapper = render(TestingComponent, { props: { event } });
+	const wrapper = render(TestingComponent, { props: { options } });
 
-	// Act
 	const createButton = wrapper.getByRole("button", { name: functionName });
 	await fireEvent.click(createButton);
 
@@ -123,10 +127,13 @@ describe.each([
 	it("displays the dialog", async () => {
 		// Arrange
 		// Act
-		const wrapper = await callComponentFunction(
-			eventName,
-			getDefaultIcsEvent(),
-		);
+		const wrapper = await callComponentFunction(eventName, {
+			event: getDefaultIcsEvent(),
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
+		});
 
 		// Assert
 		wrapper.getByRole("dialog");
@@ -136,10 +143,13 @@ describe.each([
 		"emits a cancel result and closes the dialog if the $buttonName button is clicked",
 		async ({ buttonName }) => {
 			// Arrange
-			const wrapper = await callComponentFunction(
-				eventName,
-				getDefaultIcsEvent(),
-			);
+			const wrapper = await callComponentFunction(eventName, {
+				event: getDefaultIcsEvent(),
+				calendarOptions: {
+					sourceCalendar: "some-calendar",
+					calendarNames: ["some-calendar"],
+				},
+			});
 
 			// Act
 			const dialog = wrapper.getByRole("dialog");
@@ -159,9 +169,13 @@ describe.each([
 
 	it("displays an alert and doesn't close the dialog if the save button is clicked without a summary specified", async () => {
 		// Arrange
+		const event: IcsEvent = { ...getDefaultIcsEvent(), summary: "" };
 		const wrapper = await callComponentFunction(eventName, {
-			...getDefaultIcsEvent(),
-			summary: "",
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
 		});
 
 		// Act
@@ -178,8 +192,15 @@ describe.each([
 	it("returns the event and closes the dialog if the save button is clicked after specifying a summary", async () => {
 		// Arrange
 		const specifiedSummary = "New Summary";
+		const calendarName = "some-calendar";
 		const originalEvent: IcsEvent = getDefaultIcsEvent();
-		const wrapper = await callComponentFunction(eventName, originalEvent);
+		const wrapper = await callComponentFunction(eventName, {
+			event: originalEvent,
+			calendarOptions: {
+				sourceCalendar: calendarName,
+				calendarNames: [calendarName],
+			},
+		});
 
 		// Act
 		const dialog = wrapper.getByRole("dialog");
@@ -191,6 +212,7 @@ describe.each([
 		// Assert
 		const expectedEmit: EventEditDialogResult = {
 			action: EVENT_EDIT_DIALOG_ACTION.SAVE,
+			calendarName,
 			event: {
 				...originalEvent,
 				summary: specifiedSummary,
@@ -202,11 +224,18 @@ describe.each([
 
 	it("returns the original event and closes the dialog if the save button is clicked immediately", async () => {
 		// Arrange
+		const calendarName = "some-calendar";
 		const event: IcsEvent = {
 			...getDefaultIcsEvent(),
 			summary: "Something different",
 		};
-		const wrapper = await callComponentFunction(eventName, event);
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: calendarName,
+				calendarNames: [calendarName],
+			},
+		});
 
 		// Act
 		const dialog = wrapper.getByRole("dialog");
@@ -216,6 +245,7 @@ describe.each([
 		// Assert
 		const expectedEmit: EventEditDialogResult = {
 			action: EVENT_EDIT_DIALOG_ACTION.SAVE,
+			calendarName,
 			event,
 		};
 		expect(wrapper.emitted("dialogResult")).toEqual([[expectedEmit]]);
@@ -224,10 +254,13 @@ describe.each([
 
 	it("creates a recurrance rule if the frequency is set", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction(
-			eventName,
-			getDefaultIcsEvent(),
-		);
+		const wrapper = await callComponentFunction(eventName, {
+			event: getDefaultIcsEvent(),
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
+		});
 
 		// Act
 		const dialog = wrapper.getByRole("dialog");
@@ -249,11 +282,15 @@ describe.each([
 		const newYear = 2027;
 		const newMonth = 8;
 		const newDate = 22;
-		const wrapper = await callComponentFunction(eventName, {
+		const event: IcsEvent = {
 			...getDefaultIcsEvent(),
-			start: {
-				date,
-				type: "DATE-TIME",
+			start: { date, type: "DATE-TIME" },
+		};
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
 			},
 		});
 
@@ -292,9 +329,16 @@ describe.each([
 		"toggles the start date type from $initialValue to $expectedValue if the all day checkbox is clicked",
 		async ({ initialValue, expectedValue }) => {
 			// Arrange
-			const wrapper = await callComponentFunction(eventName, {
+			const event: IcsEvent = {
 				...getDefaultIcsEvent(),
 				start: { date: new Date(), type: initialValue },
+			};
+			const wrapper = await callComponentFunction(eventName, {
+				event,
+				calendarOptions: {
+					sourceCalendar: "some-calendar",
+					calendarNames: ["some-calendar"],
+				},
 			});
 
 			// Act
@@ -316,9 +360,16 @@ describe.each([
 	it("clears the time if the all day check box is toggled off", async () => {
 		// Arrange
 		const date = new Date(2025, 6, 7, 10, 13);
-		const wrapper = await callComponentFunction(eventName, {
+		const event: IcsEvent = {
 			...getDefaultIcsEvent(),
 			start: { date, type: "DATE-TIME" },
+		};
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
 		});
 
 		// Act
@@ -340,9 +391,19 @@ describe.each([
 
 	it("doesn't display the time input if the start date is of type DATE", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction(eventName, {
+		const event: IcsEvent = {
 			...getDefaultIcsEvent(),
-			start: { date: new Date(), type: "DATE" },
+			start: {
+				date: new Date(),
+				type: "DATE",
+			},
+		};
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
 		});
 
 		// Act
@@ -354,9 +415,16 @@ describe.each([
 
 	it("displays the time input if the start date is of type DATE-TIME", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction(eventName, {
+		const event: IcsEvent = {
 			...getDefaultIcsEvent(),
 			start: { date: new Date(), type: "DATE-TIME" },
+		};
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
 		});
 
 		// Act
@@ -371,9 +439,16 @@ describe.each([
 		const date = new Date(2025, 6, 7, 10, 13);
 		const newHour = 12;
 		const newMinute = 54;
-		const wrapper = await callComponentFunction(eventName, {
+		const event: IcsEvent = {
 			...getDefaultIcsEvent(),
 			start: { date, type: "DATE-TIME" },
+		};
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
 		});
 
 		// Act
@@ -402,9 +477,16 @@ describe.each([
 
 	it("removes recurrance rule if the frequency changed to undefined", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction(eventName, {
+		const event: IcsEvent = {
 			...getDefaultIcsEvent(),
 			recurrenceRule: { frequency: "MONTHLY" },
+		};
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
 		});
 
 		// Act
@@ -420,9 +502,16 @@ describe.each([
 
 	it("updates the recurrence frequency from one value to another", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction(eventName, {
+		const event: IcsEvent = {
 			...getDefaultIcsEvent(),
 			recurrenceRule: { frequency: "MONTHLY" },
+		};
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
 		});
 
 		// Act
@@ -441,10 +530,17 @@ describe.each([
 
 	it("sets the by day value of the recurrence rule when switching to WEEKLY frequency", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction(eventName, {
+		const event: IcsEvent = {
 			...getDefaultIcsEvent(),
 			start: { date: new Date(2010, 5, 7) },
 			recurrenceRule: { frequency: "MONTHLY" },
+		};
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
 		});
 
 		// Act
@@ -468,9 +564,16 @@ describe.each([
 
 	it("updates the by day value to match selected days of the week", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction(eventName, {
+		const event: IcsEvent = {
 			...getDefaultIcsEvent(),
 			recurrenceRule: { frequency: "WEEKLY", byDay: [{ day: "SA" }] },
+		};
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
 		});
 
 		// Act
@@ -494,10 +597,17 @@ describe.each([
 
 	it("defaults to repeating on the same day of the month as the start date when changing to a monthly frequency", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction(eventName, {
+		const event: IcsEvent = {
 			...getDefaultIcsEvent(),
 			start: {
 				date: new Date(2025, 9, 25),
+			},
+		};
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
 			},
 		});
 
@@ -521,7 +631,7 @@ describe.each([
 
 	it("defaults to repeating on the same day of the month as the start date when changing from repeating monthly by weekday to repeating by days of the month", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction(eventName, {
+		const event: IcsEvent = {
 			...getDefaultIcsEvent(),
 			start: {
 				date: new Date(2025, 9, 25),
@@ -529,6 +639,13 @@ describe.each([
 			recurrenceRule: {
 				frequency: "MONTHLY",
 				byDay: [{ day: "TH", occurrence: 1 }],
+			},
+		};
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
 			},
 		});
 
@@ -549,7 +666,7 @@ describe.each([
 
 	it("defaults to repeating on the same weekday as the start date when repeating monthly if switching from repeating by day of month to by weekdays", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction(eventName, {
+		const event: IcsEvent = {
 			...getDefaultIcsEvent(),
 			start: {
 				date: new Date(2025, 9, 25),
@@ -557,6 +674,13 @@ describe.each([
 			recurrenceRule: {
 				frequency: "MONTHLY",
 				byMonthday: [25],
+			},
+		};
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
 			},
 		});
 
@@ -579,7 +703,7 @@ describe.each([
 
 	it("defaults to repeating on the last weekday as if the start date > 28 when repeating monthly if switching from repeating by day of month to by weekdays", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction(eventName, {
+		const event: IcsEvent = {
 			...getDefaultIcsEvent(),
 			start: {
 				date: new Date(2025, 9, 29),
@@ -587,6 +711,13 @@ describe.each([
 			recurrenceRule: {
 				frequency: "MONTHLY",
 				byMonthday: [29],
+			},
+		};
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
 			},
 		});
 
@@ -609,7 +740,7 @@ describe.each([
 
 	it("can select different days when repeating monthly by day of the month", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction(eventName, {
+		const event: IcsEvent = {
 			...getDefaultIcsEvent(),
 			start: {
 				date: new Date(2025, 9, 22),
@@ -617,6 +748,13 @@ describe.each([
 			recurrenceRule: {
 				frequency: "MONTHLY",
 				byMonthday: [22],
+			},
+		};
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
 			},
 		});
 
@@ -642,10 +780,14 @@ describe.each([
 describe("createNewEvent", () => {
 	it("doesn't display the delete button", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction(
-			"createNewEvent",
-			getDefaultIcsEvent(),
-		);
+		const event: IcsEvent = getDefaultIcsEvent();
+		const wrapper = await callComponentFunction("createNewEvent", {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
+		});
 
 		// Act
 		const dialog = wrapper.getByRole("dialog");
@@ -660,10 +802,14 @@ describe("createNewEvent", () => {
 describe("updateEvent", () => {
 	it("displays the delete button", async () => {
 		// Arrange
-		const wrapper = await callComponentFunction(
-			"updateEvent",
-			getDefaultIcsEvent(),
-		);
+		const event: IcsEvent = getDefaultIcsEvent();
+		const wrapper = await callComponentFunction("updateEvent", {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
+		});
 
 		// Act
 		const dialog = wrapper.getByRole("dialog");
@@ -675,10 +821,14 @@ describe("updateEvent", () => {
 	it("indicates the event should be deleted and closes the dialog if the delete button is clicked and it's confirmed", async () => {
 		// Arrange
 		vi.mocked(window.confirm).mockReturnValue(true);
-		const wrapper = await callComponentFunction(
-			"updateEvent",
-			getDefaultIcsEvent(),
-		);
+		const event = getDefaultIcsEvent();
+		const wrapper = await callComponentFunction("updateEvent", {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
+		});
 
 		// Act
 		const dialog = wrapper.getByRole("dialog");
@@ -698,10 +848,14 @@ describe("updateEvent", () => {
 	it("doesn't return or close the dialog if the delete button is clicked but it's not confirmed", async () => {
 		// Arrange
 		vi.mocked(window.confirm).mockReturnValue(false);
-		const wrapper = await callComponentFunction(
-			"updateEvent",
-			getDefaultIcsEvent(),
-		);
+		const event = getDefaultIcsEvent();
+		const wrapper = await callComponentFunction("updateEvent", {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
+		});
 
 		// Act
 		const dialog = wrapper.getByRole("dialog");
