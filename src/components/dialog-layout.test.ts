@@ -11,7 +11,7 @@ it("doesn't display if not set to be open", () => {
 	// Act
 	const wrapper = render(DialogLayout, {
 		slots: { default: "Slot Content" },
-		props: { title: "The Title", isOpen: false },
+		props: { title: "The Title", isOpen: false, includeCloseButton: true },
 	});
 
 	// Assert
@@ -24,7 +24,7 @@ it("displays if set to be open", () => {
 	// Act
 	const wrapper = render(DialogLayout, {
 		slots: { default: "Slot Content" },
-		props: { title: "The Title", isOpen: true },
+		props: { title: "The Title", isOpen: true, includeCloseButton: true },
 	});
 
 	// Assert
@@ -38,7 +38,7 @@ it("displays default slot content", () => {
 	// Act
 	const wrapper = render(DialogLayout, {
 		slots: { default: slotContent },
-		props: { title: "The Title", isOpen: true },
+		props: { title: "The Title", isOpen: true, includeCloseButton: true },
 	});
 
 	// Assert
@@ -52,7 +52,7 @@ it("displays the title", () => {
 	// Act
 	const wrapper = render(DialogLayout, {
 		slots: { default: "Slot content" },
-		props: { title, isOpen: true },
+		props: { title, isOpen: true, includeCloseButton: true },
 	});
 
 	// Assert
@@ -66,7 +66,7 @@ it("displays the footer slot content", () => {
 	// Act
 	const wrapper = render(DialogLayout, {
 		slots: { footer: slotContent },
-		props: { title: "The Title", isOpen: true },
+		props: { title: "The Title", isOpen: true, includeCloseButton: true },
 	});
 
 	// Assert
@@ -80,7 +80,7 @@ it("toggles visiblity reactively", async () => {
 	// Act / Assert
 	const wrapper = render(DialogLayout, {
 		slots: { default: slotContent },
-		props: { title: "The Title", isOpen: false },
+		props: { title: "The Title", isOpen: false, includeCloseButton: true },
 	});
 
 	expect(wrapper.queryByText(slotContent)).toBeNull();
@@ -102,6 +102,7 @@ it("emits a change to the isOpen prop and a close event when the close button is
 			"onUpdate:isOpen": (newValue) => {
 				isOpen = newValue;
 			},
+			includeCloseButton: true,
 		},
 	});
 
@@ -112,4 +113,19 @@ it("emits a change to the isOpen prop and a close event when the close button is
 	// Assert
 	expect(isOpen).toBe(false);
 	expect(wrapper.emitted("close")).toEqual([[]]);
+});
+
+it("doesn't display the close button if includeCloseButton is false", async () => {
+	// Arrange
+	// Act
+	const wrapper = render(DialogLayout, {
+		props: {
+			title: "The Title",
+			isOpen: true,
+			includeCloseButton: false,
+		},
+	});
+
+	// Assert
+	expect(wrapper.queryByRole("button", { name: "Close" })).toBeNull();
 });

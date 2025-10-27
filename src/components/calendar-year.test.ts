@@ -1,13 +1,16 @@
 import {
 	EventOccurrence,
-	ICS_CALENDAR_COLLECTION_KEY,
+	getDefaultIcsCalendar,
 	getDefaultIcsCalendarCollection,
 	getDefaultIcsEvent,
 	getEventsByDateFromCalendarCollection,
+	ICS_CALENDAR_COLLECTION_KEY,
 } from "@/calendar-events";
+import { getDefaultUserConfig, USER_CONFIG_KEY } from "@/user-config";
 import { fireEvent, render, within } from "@testing-library/vue";
 import { IcsEvent } from "ts-ics";
 import { beforeEach, expect, it, vi } from "vitest";
+import { ref } from "vue";
 import CalendarYear from "./calendar-year.vue";
 
 vi.mock(import("@/calendar-events"), { spy: true });
@@ -25,8 +28,10 @@ it("displays every month of the provided year", () => {
 		props: { year },
 		global: {
 			provide: {
-				[ICS_CALENDAR_COLLECTION_KEY]:
+				[ICS_CALENDAR_COLLECTION_KEY]: ref(
 					getDefaultIcsCalendarCollection(),
+				),
+				[USER_CONFIG_KEY]: ref(getDefaultUserConfig()),
 			},
 		},
 	});
@@ -39,13 +44,15 @@ it("gets the events for the month if they were not provided", () => {
 	// Arrange
 	const year = 2025;
 	const calendarCollection = getDefaultIcsCalendarCollection();
+	const userConfig = getDefaultUserConfig();
 
 	// Act
 	render(CalendarYear, {
 		props: { year },
 		global: {
 			provide: {
-				[ICS_CALENDAR_COLLECTION_KEY]: calendarCollection,
+				[ICS_CALENDAR_COLLECTION_KEY]: ref(calendarCollection),
+				[USER_CONFIG_KEY]: ref(userConfig),
 			},
 		},
 	});
@@ -53,6 +60,7 @@ it("gets the events for the month if they were not provided", () => {
 	// Assert
 	expect(getEventsByDateFromCalendarCollection).toHaveBeenCalledWith(
 		calendarCollection,
+		userConfig,
 		new Date(2024, 11, 29),
 		new Date(2026, 0, 3),
 	);
@@ -68,7 +76,8 @@ it("emits if a day was clicked", async () => {
 		props: { year },
 		global: {
 			provide: {
-				[ICS_CALENDAR_COLLECTION_KEY]: calendarCollection,
+				[ICS_CALENDAR_COLLECTION_KEY]: ref(calendarCollection),
+				[USER_CONFIG_KEY]: ref(getDefaultUserConfig()),
 			},
 		},
 	});
@@ -89,14 +98,19 @@ it("emits if an event was clicked", async () => {
 		start: { date: new Date(2025, 5, 3) },
 		summary: "My Event",
 	};
-	calendarCollection.default.events = [event];
+	const calendarName = "some-calendar";
+	calendarCollection[calendarName] = {
+		...getDefaultIcsCalendar(),
+		events: [event],
+	};
 
 	// Act
 	const wrapper = render(CalendarYear, {
 		props: { year },
 		global: {
 			provide: {
-				[ICS_CALENDAR_COLLECTION_KEY]: calendarCollection,
+				[ICS_CALENDAR_COLLECTION_KEY]: ref(calendarCollection),
+				[USER_CONFIG_KEY]: ref(getDefaultUserConfig()),
 			},
 		},
 	});
@@ -106,7 +120,7 @@ it("emits if an event was clicked", async () => {
 	// Assert
 	const expectedResult: EventOccurrence = {
 		date: event.start.date,
-		sourceCalendar: "default",
+		sourceCalendar: calendarName,
 		event,
 	};
 	expect(wrapper.emitted("eventClicked")).toEqual([[expectedResult]]);

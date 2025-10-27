@@ -65,17 +65,19 @@ describe("writeUserConfigFile", () => {
 	});
 });
 
-describe("readCalendarEventsFile", () => {
+describe("readCalendarFiles", () => {
 	it(`invokes ${ELECTRON_API_EVENTS.READ_CALENDAR_FILES}`, async () => {
 		// Arrange
+		const directory = "some-directory";
 		const electronApi = getElectronApi();
 
 		// Act
-		await electronApi.readCalendarFile();
+		await electronApi.readCalendarFiles(directory);
 
 		// Assert
 		expect(ipcRenderer.invoke).toHaveBeenCalledWith(
 			ELECTRON_API_EVENTS.READ_CALENDAR_FILES,
+			directory,
 		);
 	});
 });
@@ -83,15 +85,19 @@ describe("readCalendarEventsFile", () => {
 describe("writeCalendarEventsFile", () => {
 	it(`invokes ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}`, async () => {
 		// Arrange
+		const directory = "some-directory";
+		const calendarName = "some-calendar";
 		const contents = "some-file";
 		const electronApi = getElectronApi();
 
 		// Act
-		await electronApi.writeCalendarFile(contents);
+		await electronApi.writeCalendarFile(directory, calendarName, contents);
 
 		// Assert
 		expect(ipcRenderer.invoke).toHaveBeenCalledWith(
 			ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE,
+			directory,
+			calendarName,
 			contents,
 		);
 	});
@@ -117,14 +123,16 @@ describe("printToPdf", () => {
 describe("selectDirectory", () => {
 	it(`invokes ${ELECTRON_API_EVENTS.SELECT_DIRECTORY}`, async () => {
 		// Arrange
+		const title = "some-title";
 		const electronApi = getElectronApi();
 
 		// Act
-		await electronApi.selectDirectory();
+		await electronApi.selectDirectory(title);
 
 		// Assert
 		expect(ipcRenderer.invoke).toHaveBeenCalledWith(
 			ELECTRON_API_EVENTS.SELECT_DIRECTORY,
+			title,
 		);
 	});
 });
