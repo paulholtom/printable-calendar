@@ -1,3 +1,4 @@
+import { UserConfig } from "@/user-config";
 import {
 	extendByRecurrenceRule,
 	IcsEvent,
@@ -142,6 +143,7 @@ export function getEventsByDateFromCalendarCollection<
 	CalendarCollection extends IcsCalendarCollection,
 >(
 	collection: CalendarCollection,
+	userConfig: UserConfig,
 	rangeStart: Date,
 	rangeEnd: Date,
 ): EventsByDate {
@@ -155,6 +157,9 @@ export function getEventsByDateFromCalendarCollection<
 	}
 
 	for (const [calendarName, calendar] of Object.entries(collection)) {
+		if (userConfig.calendars[calendarName]?.disabled) {
+			continue;
+		}
 		calendar?.events?.forEach((event) => {
 			const datesOfEvent = getDaysForEventInRange(
 				event,

@@ -32,6 +32,7 @@ import {
 	useIcsCalendarCollection,
 } from "@/calendar-events";
 import { getDateDisplayValue, getDaysOfWeek } from "@/dates";
+import { useUserConfig } from "@/user-config";
 import { computed } from "vue";
 import { CalendarDayVariant } from "./calendar-day-variant";
 import CalendarDay from "./calendar-day.vue";
@@ -57,6 +58,7 @@ const props = defineProps<{
 }>();
 
 const calendarCollection = useIcsCalendarCollection();
+const userConfig = useUserConfig();
 
 const firstOfMonth = computed(() => new Date(props.year, props.month));
 const endOfMonth = computed(() => new Date(props.year, props.month + 1, 0));
@@ -82,6 +84,7 @@ const eventsByDate = computed(() => {
 		props.parentEventsByDate ??
 		getEventsByDateFromCalendarCollection(
 			calendarCollection.value,
+			userConfig.value,
 			firstDisplayDate.value,
 			lastDisplayDate.value,
 		)

@@ -18,6 +18,7 @@ import {
 	getEventsByDateFromCalendarCollection,
 	useIcsCalendarCollection,
 } from "@/calendar-events";
+import { useUserConfig } from "@/user-config";
 import { computed } from "vue";
 import CalendarMonth from "./calendar-month.vue";
 
@@ -34,6 +35,7 @@ const props = defineProps<{
 }>();
 
 const calendarCollection = useIcsCalendarCollection();
+const userConfig = useUserConfig();
 
 const firstOfYear = computed(() => new Date(props.year, 0, 1));
 const endOfYear = computed(() => new Date(props.year, 11, 31));
@@ -52,6 +54,7 @@ const lastDisplayDate = computed(
 const eventsByDate = computed(() => {
 	return getEventsByDateFromCalendarCollection(
 		calendarCollection.value,
+		userConfig.value,
 		firstDisplayDate.value,
 		lastDisplayDate.value,
 	);
