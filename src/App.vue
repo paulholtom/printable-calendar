@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { generateIcsCalendar, IcsEvent } from "ts-ics";
+import { IcsEvent } from "ts-ics";
 import { computed, ref, toRaw, useTemplateRef, watch, WatchHandle } from "vue";
 import {
 	EventOccurrence,
@@ -48,6 +48,7 @@ import {
 	IcsCalendarCollection,
 	parseIcsCalendarString,
 	provideIcsCalendarCollection,
+	serializeIcsCalendar,
 } from "./calendar-events";
 import AlertDialog from "./components/alert-dialog.vue";
 import CalendarListControls from "./components/calendar-list-controls.vue";
@@ -190,7 +191,7 @@ async function setupIcsCalendarCollection(): Promise<void> {
 				window.electronApi.writeCalendarFile(
 					configFile.value.calendarDirectory,
 					calendarName,
-					generateIcsCalendar(calendar),
+					serializeIcsCalendar(calendar),
 				);
 			}
 		},

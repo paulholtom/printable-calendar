@@ -1,5 +1,5 @@
 import { parseIcsCalendar } from "@ts-ics/schema-zod";
-import { IcsCalendar, IcsEvent } from "ts-ics";
+import { generateIcsCalendar, IcsCalendar, IcsEvent } from "ts-ics";
 
 /**
  * @returns An event with defaults for all required values.
@@ -36,19 +36,60 @@ export function getDefaultIcsCalendar(): IcsCalendar {
 }
 
 /**
- * @returns A default calendar event collection.
+ * @returns A default calendar collection.
  */
 export function getDefaultIcsCalendarCollection(): IcsCalendarCollection {
 	return {};
 }
 
 /**
- * @param unparsed The raw JSON string to parse.
- * @returns The parsed calender events.
+ * @param calendar The calendar to serialize.
+ * @returns The ICS file contents.
+ */
+export function serializeIcsCalendar(calendar: IcsCalendar): string {
+	const normalizedCalendar = {
+		...calendar,
+		events: calendar.events
+			? calendar.events.map((event) => {
+					if (event.start.type === "DATE") {
+						return {
+							...event,
+							start: {
+								...event.start,
+								date: new Date(
+									Date.UTC(
+										event.start.date.getFullYear(),
+										event.start.date.getMonth(),
+										event.start.date.getDate(),
+									),
+								),
+							},
+						};
+					}
+					return event;
+				})
+			: undefined,
+	};
+	return generateIcsCalendar(normalizedCalendar);
+}
+
+/**
+ * @param unparsed The raw ICS file to parse.
+ * @returns The parsed calender.
  */
 export function parseIcsCalendarString(unparsed: string): IcsCalendar {
 	try {
-		return parseIcsCalendar(unparsed);
+		const calendar = parseIcsCalendar(unparsed);
+		calendar.events?.forEach((event) => {
+			if (event.start.type === "DATE") {
+				event.start.date = new Date(
+					event.start.date.getUTCFullYear(),
+					event.start.date.getUTCMonth(),
+					event.start.date.getUTCDate(),
+				);
+			}
+		});
+		return calendar;
 	} catch (err) {
 		throw new Error("Error reading calendar file.", { cause: err });
 	}
