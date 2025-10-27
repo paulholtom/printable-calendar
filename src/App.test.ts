@@ -1,4 +1,5 @@
 import {
+	CalendarFileContents,
 	getDefaultIcsCalendar,
 	getDefaultIcsCalendarCollection,
 	getDefaultIcsEvent,
@@ -23,7 +24,7 @@ vi.mock(import("@/calendar-events"), { spy: true });
 const mockElectronApi = {
 	readUserConfigFile: vi.fn(),
 	writeUserConfigFile: vi.fn(),
-	readCalendarFile: vi.fn(),
+	readCalendarFiles: vi.fn(),
 	writeCalendarFile: vi.fn(),
 	printToPdf: vi.fn(),
 	selectDirectory: vi.fn(),
@@ -34,13 +35,25 @@ beforeEach(() => {
 	vi.resetAllMocks();
 
 	window.electronApi = mockElectronApi;
-	window.alert = vi.fn();
-	window.confirm = vi.fn();
 });
+
+const CALENDAR_DIRECTORY = "calendar-directory";
+const CALENDAR_NAME = "calendar-name";
+
+/**
+ * @returns Gets a user config with the settings required to show the primary components.
+ */
+function getUserConfigWithRequiredSettings(): UserConfig {
+	return {
+		...getDefaultUserConfig(),
+		calendarDirectory: CALENDAR_DIRECTORY,
+		calendars: { [CALENDAR_NAME]: { disabled: false } },
+	};
+}
 
 function createFilePromises(fileContents?: {
 	userConfig?: UserConfig;
-	defaultCalendar?: IcsCalendar | string;
+	calendar?: IcsCalendar | string;
 }): Promise<unknown>[] {
 	// Config file
 	const { promise: configFilePromise, resolve: resolveConfigFilePromise } =
@@ -49,26 +62,35 @@ function createFilePromises(fileContents?: {
 		() => configFilePromise,
 	);
 	resolveConfigFilePromise(
-		JSON.stringify(fileContents?.userConfig ?? getDefaultUserConfig()),
+		JSON.stringify(
+			fileContents?.userConfig ?? getUserConfigWithRequiredSettings(),
+		),
 	);
 
-	// Default calendar
 	const {
-		promise: defaultCalendarFilePromise,
-		resolve: resolveDefaultCalendarFilePromise,
-	} = Promise.withResolvers<string | undefined>();
-	mockElectronApi.readCalendarFile.mockImplementationOnce(
-		() => defaultCalendarFilePromise,
+		promise: calendarFilesPromise,
+		resolve: resolveCalendarFilesPromise,
+	} = Promise.withResolvers<CalendarFileContents>();
+	mockElectronApi.readCalendarFiles.mockImplementationOnce(
+		() => calendarFilesPromise,
 	);
-	resolveDefaultCalendarFilePromise(
-		typeof fileContents?.defaultCalendar === "string"
-			? fileContents.defaultCalendar
-			: fileContents?.defaultCalendar
-				? generateIcsCalendar(fileContents.defaultCalendar)
-				: undefined,
+	resolveCalendarFilesPromise(
+		typeof fileContents?.calendar === "string"
+			? { [CALENDAR_NAME]: fileContents.calendar }
+			: fileContents?.calendar
+				? {
+						[CALENDAR_NAME]: generateIcsCalendar(
+							fileContents.calendar,
+						),
+					}
+				: {
+						[CALENDAR_NAME]: generateIcsCalendar(
+							getDefaultIcsCalendar(),
+						),
+					},
 	);
 
-	return [configFilePromise, defaultCalendarFilePromise];
+	return [configFilePromise, calendarFilesPromise];
 }
 
 function getProvidedCalendarCollection() {
@@ -151,13 +173,14 @@ describe("configFile", () => {
 describe("calendarEventsFile", () => {
 	it("displays an error if there is an issue parsing the file", async () => {
 		// Arrange
-		const defaultCalendar = "bad file";
-		const filePromises = createFilePromises({ defaultCalendar });
+		const calendar = "bad file";
+		const filePromises = createFilePromises({ calendar });
 
 		// Act
 		const wrapper = render(App);
 		// wait for the file to be parsed.
 		await Promise.all(filePromises);
+		await nextTick();
 
 		// Assert
 		expect(mockElectronApi.writeCalendarFile).not.toHaveBeenCalled();
@@ -168,37 +191,42 @@ describe("calendarEventsFile", () => {
 
 	it("parses and provides the calendar event collection without writing it back out immediately", async () => {
 		// Arrange
-		const defaultCalendar = getDefaultIcsCalendar();
-		const filePromises = createFilePromises({ defaultCalendar });
+		const calendar = getDefaultIcsCalendar();
+		const filePromises = createFilePromises();
 
 		// Act
 		render(App);
 		// wait for the file to be parsed.
 		await Promise.all(filePromises);
+		await nextTick();
 
 		// Assert
 		expect(mockElectronApi.writeCalendarFile).not.toHaveBeenCalled();
 		const expectedCollection: IcsCalendarCollection = {
 			...getDefaultIcsCalendarCollection(),
-			default: defaultCalendar,
+			[CALENDAR_NAME]: calendar,
 		};
-		expect(provideIcsCalendarCollection).toHaveBeenCalledWith(
-			expectedCollection,
-		);
+		expect(
+			vi.mocked(provideIcsCalendarCollection).mock.calls[0][0].value,
+		).toEqual(expectedCollection);
 	});
 
 	it("saves changes made to the calendar events", async () => {
 		// Arrange
 		const newEvent = getDefaultIcsEvent();
-		const defaultCalendar: IcsCalendar = getDefaultIcsCalendar();
-		const filePromises = createFilePromises({ defaultCalendar });
+		const calendar: IcsCalendar = getDefaultIcsCalendar();
+		const filePromises = createFilePromises({ calendar });
 		render(App);
 		await Promise.all(filePromises);
 
 		// Act
 		const providedCalendarCollection = getProvidedCalendarCollection();
-		providedCalendarCollection.default.events = [];
-		providedCalendarCollection.default.events.push(newEvent);
+		if (providedCalendarCollection.value[CALENDAR_NAME]) {
+			providedCalendarCollection.value[CALENDAR_NAME].events = [];
+			providedCalendarCollection.value[CALENDAR_NAME].events.push(
+				newEvent,
+			);
+		}
 		await nextTick();
 
 		// Assert
@@ -208,6 +236,8 @@ describe("calendarEventsFile", () => {
 			events: [newEvent],
 		};
 		expect(mockElectronApi.writeCalendarFile).toHaveBeenCalledWith(
+			CALENDAR_DIRECTORY,
+			CALENDAR_NAME,
 			generateIcsCalendar(expectedEvents),
 		);
 	});
@@ -216,7 +246,7 @@ describe("calendarEventsFile", () => {
 describe("calendar display", () => {
 	it("displays a single month if one is specified in the user config", async () => {
 		// Arrange
-		const userConfig: UserConfig = getDefaultUserConfig();
+		const userConfig: UserConfig = getUserConfigWithRequiredSettings();
 		userConfig.displayDate.month = 0;
 		const filePromises = createFilePromises({ userConfig });
 
@@ -224,6 +254,7 @@ describe("calendar display", () => {
 		const wrapper = render(App);
 		// wait for the file to be parsed.
 		await Promise.all(filePromises);
+		await nextTick();
 
 		// Assert
 		expect(wrapper.getAllByRole("grid").length).toBe(1);
@@ -231,7 +262,7 @@ describe("calendar display", () => {
 
 	it("displays an entire year if no month is specified", async () => {
 		// Arrange
-		const userConfig: UserConfig = getDefaultUserConfig();
+		const userConfig: UserConfig = getUserConfigWithRequiredSettings();
 		userConfig.displayDate.month = undefined;
 		const filePromises = createFilePromises({ userConfig });
 
@@ -239,6 +270,7 @@ describe("calendar display", () => {
 		const wrapper = render(App);
 		// wait for the file to be parsed.
 		await Promise.all(filePromises);
+		await nextTick();
 
 		// Assert
 		expect(wrapper.getAllByRole("grid").length).toBe(12);
@@ -251,6 +283,7 @@ describe("event editing", () => {
 		const filePromises = createFilePromises();
 		const wrapper = render(App);
 		await Promise.all(filePromises);
+		await nextTick();
 
 		// Act
 		const addButton = wrapper.getByRole("button", { name: "Add Event" });
@@ -262,7 +295,7 @@ describe("event editing", () => {
 
 	it("displays the event creation dialog if a specific day is clicked on a monthly calendar", async () => {
 		// Arrange
-		const userConfig: UserConfig = getDefaultUserConfig();
+		const userConfig: UserConfig = getUserConfigWithRequiredSettings();
 		userConfig.displayDate.month = 5;
 		userConfig.displayDate.year = 2025;
 		const filePromises = createFilePromises({
@@ -270,6 +303,7 @@ describe("event editing", () => {
 		});
 		const wrapper = render(App);
 		await Promise.all(filePromises);
+		await nextTick();
 
 		// Act
 		const dateButton = wrapper.getByText("10");
@@ -281,7 +315,7 @@ describe("event editing", () => {
 
 	it("displays the event creation dialog if a specific day is clicked on a yearly calendar", async () => {
 		// Arrange
-		const userConfig: UserConfig = getDefaultUserConfig();
+		const userConfig: UserConfig = getUserConfigWithRequiredSettings();
 		userConfig.displayDate.month = undefined;
 		userConfig.displayDate.year = 2025;
 		const filePromises = createFilePromises({
@@ -289,6 +323,7 @@ describe("event editing", () => {
 		});
 		const wrapper = render(App);
 		await Promise.all(filePromises);
+		await nextTick();
 
 		// Act
 		const january = wrapper.getAllByRole("grid")[0];
@@ -305,6 +340,7 @@ describe("event editing", () => {
 		const filePromises = createFilePromises();
 		const wrapper = render(App);
 		await Promise.all(filePromises);
+		await nextTick();
 		const addButton = wrapper.getByRole("button", { name: "Add Event" });
 		await fireEvent.click(addButton);
 
@@ -319,7 +355,7 @@ describe("event editing", () => {
 
 		// Assert
 		const collection = getProvidedCalendarCollection();
-		expect(collection.default.events).toEqual([
+		expect(collection.value[CALENDAR_NAME]?.events).toEqual([
 			expect.objectContaining({
 				summary: newEventSummary,
 				start: expect.objectContaining({ date: new Date(2010, 4, 3) }),
@@ -334,6 +370,7 @@ describe("event editing", () => {
 			const filePromises = createFilePromises();
 			const wrapper = render(App);
 			await Promise.all(filePromises);
+			await nextTick();
 			const addButton = wrapper.getByRole("button", {
 				name: "Add Event",
 			});
@@ -348,18 +385,18 @@ describe("event editing", () => {
 
 			// Assert
 			const collection = getProvidedCalendarCollection();
-			expect(collection.default.events).toBeUndefined();
+			expect(collection.value[CALENDAR_NAME]?.events).toBeUndefined();
 		},
 	);
 
 	async function renderAppWithClickableEvent(
 		eventOrSummary: IcsEvent | string,
 	): Promise<RenderResult> {
-		const userConfig: UserConfig = getDefaultUserConfig();
+		const userConfig: UserConfig = getUserConfigWithRequiredSettings();
 		userConfig.displayDate.month = 5;
 		userConfig.displayDate.year = 2025;
-		const defaultCalendar = getDefaultIcsCalendar();
-		defaultCalendar.events = [
+		const calendar = getDefaultIcsCalendar();
+		calendar.events = [
 			typeof eventOrSummary == "string"
 				? {
 						...getDefaultIcsEvent(),
@@ -370,10 +407,11 @@ describe("event editing", () => {
 		];
 		const filePromises = createFilePromises({
 			userConfig,
-			defaultCalendar,
+			calendar,
 		});
 		const wrapper = render(App);
 		await Promise.all(filePromises);
+		await nextTick();
 
 		return wrapper;
 	}
@@ -398,7 +436,9 @@ describe("event editing", () => {
 
 		// Act
 		const calendarCollection = getProvidedCalendarCollection();
-		calendarCollection.default.events = [];
+		if (calendarCollection.value[CALENDAR_NAME]) {
+			calendarCollection.value[CALENDAR_NAME].events = [];
+		}
 		const eventDisplay = wrapper.getByText(eventSummary);
 		await fireEvent.click(eventDisplay);
 
@@ -411,7 +451,6 @@ describe("event editing", () => {
 		const eventSummary = "My Event";
 		const wrapper = await renderAppWithClickableEvent(eventSummary);
 		const calendarCollection = getProvidedCalendarCollection();
-		vi.mocked(window.confirm).mockRejectedValueOnce(true);
 
 		// Act
 		const eventDisplay = wrapper.getByText(eventSummary);
@@ -421,9 +460,14 @@ describe("event editing", () => {
 			name: "Delete",
 		});
 		await fireEvent.click(deleteButton);
+		await fireEvent.click(
+			within(wrapper.getByRole("alertdialog")).getByRole("button", {
+				name: "Yes",
+			}),
+		);
 
 		// Assert
-		expect(calendarCollection.default.events).toEqual([]);
+		expect(calendarCollection.value[CALENDAR_NAME]?.events).toEqual([]);
 	});
 
 	it("updates an event if the save button is clicked", async () => {
@@ -432,7 +476,6 @@ describe("event editing", () => {
 		const newEventSummary = "My shiny new event";
 		const wrapper = await renderAppWithClickableEvent(originalEventSummary);
 		const calendarCollection = getProvidedCalendarCollection();
-		vi.mocked(window.confirm).mockRejectedValueOnce(true);
 
 		// Act
 		const eventDisplay = wrapper.getByText(originalEventSummary);
@@ -444,9 +487,9 @@ describe("event editing", () => {
 		await fireEvent.click(saveButton);
 
 		// Assert
-		expect(calendarCollection.default.events?.[0].summary).toEqual(
-			newEventSummary,
-		);
+		expect(
+			calendarCollection.value[CALENDAR_NAME]?.events?.[0].summary,
+		).toEqual(newEventSummary);
 	});
 
 	it("does not update the original event if cancel is clicked", async () => {
@@ -455,7 +498,6 @@ describe("event editing", () => {
 		const newEventSummary = "My shiny new event";
 		const wrapper = await renderAppWithClickableEvent(originalEventSummary);
 		const calendarCollection = getProvidedCalendarCollection();
-		vi.mocked(window.confirm).mockRejectedValueOnce(true);
 
 		// Act
 		const eventDisplay = wrapper.getByText(originalEventSummary);
@@ -469,8 +511,8 @@ describe("event editing", () => {
 		await fireEvent.click(cancelButton);
 
 		// Assert
-		expect(calendarCollection.default.events?.[0].summary).toEqual(
-			originalEventSummary,
-		);
+		expect(
+			calendarCollection.value[CALENDAR_NAME]?.events?.[0].summary,
+		).toEqual(originalEventSummary);
 	});
 });
