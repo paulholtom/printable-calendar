@@ -75,7 +75,7 @@ export function serializeIcsCalendar(calendar: IcsCalendar): string {
 
 /**
  * @param unparsed The raw ICS file to parse.
- * @returns The parsed calender.
+ * @returns The parsed calendar.
  */
 export function parseIcsCalendarString(unparsed: string): IcsCalendar {
 	try {

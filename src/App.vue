@@ -127,12 +127,12 @@ const calendarFilesLoaded = ref(false);
 const icsCalendarCollection = ref<IcsCalendarCollection>(
 	getDefaultIcsCalendarCollection(),
 );
-let calenderCollectionWatchHandle: WatchHandle | undefined = undefined;
+let calendarCollectionWatchHandle: WatchHandle | undefined = undefined;
 async function setupIcsCalendarCollection(): Promise<void> {
 	if (configFile.value.calendarDirectory === undefined) {
 		return;
 	}
-	calenderCollectionWatchHandle?.();
+	calendarCollectionWatchHandle?.();
 	calendarFilesLoaded.value = false;
 	const fileContents = await window.electronApi.readCalendarFiles(
 		configFile.value.calendarDirectory,
@@ -173,7 +173,7 @@ async function setupIcsCalendarCollection(): Promise<void> {
 
 	calendarFilesLoaded.value = true;
 
-	calenderCollectionWatchHandle = watch(
+	calendarCollectionWatchHandle = watch(
 		icsCalendarCollection,
 		(newValue) => {
 			for (const [calendarName, calendar] of Object.entries(newValue)) {
@@ -183,7 +183,7 @@ async function setupIcsCalendarCollection(): Promise<void> {
 				if (configFile.value.calendarDirectory === undefined) {
 					errors.value.push(
 						new Error(
-							"Calender directory isn't set when trying to save calendars.",
+							"Calendar directory isn't set when trying to save calendars.",
 						),
 					);
 					return;
