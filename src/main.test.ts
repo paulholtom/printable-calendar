@@ -200,14 +200,24 @@ describe(`ipcMain handle ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}`, () => {
 
 	it(`calls the ${writeCalendarFile.name} function`, async () => {
 		// Arrange
-		const fileName = "file-name";
+		const directoryName = "some-directory";
+		const calendarName = "some-calendar";
 		const contents = "some-content";
 
 		// Act
-		await writeCalendarFileCallback({}, fileName, contents);
+		await writeCalendarFileCallback(
+			{},
+			directoryName,
+			calendarName,
+			contents,
+		);
 
 		// Assert
-		expect(writeCalendarFile).toHaveBeenCalledWith(fileName, contents);
+		expect(writeCalendarFile).toHaveBeenCalledWith(
+			directoryName,
+			calendarName,
+			contents,
+		);
 	});
 
 	it("throws an error for invalid arguments", async () => {
@@ -217,7 +227,7 @@ describe(`ipcMain handle ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}`, () => {
 
 		// Assert
 		await expect(act).rejects.toThrowError(
-			`Invalid arguments to ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}. Expected [string,string], got [number,string]`,
+			`Invalid arguments to ${ELECTRON_API_EVENTS.WRITE_CALENDAR_FILE}. Expected [string,string,string], got [number,string]`,
 		);
 	});
 });

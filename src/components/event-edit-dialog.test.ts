@@ -62,9 +62,6 @@ beforeEach(() => {
 	vi.resetAllMocks();
 	vi.useFakeTimers();
 
-	window.confirm = vi.fn();
-	window.alert = vi.fn();
-
 	vi.mocked(getDaysOfWeek).mockReturnValue(DAYS_OF_WEEK);
 });
 
@@ -182,9 +179,13 @@ describe.each([
 		const dialog = wrapper.getByRole("dialog");
 		const saveButton = within(dialog).getByRole("button", { name: "Save" });
 		await fireEvent.click(saveButton);
+		await fireEvent.click(
+			within(wrapper.getByRole("alertdialog")).getByRole("button", {
+				name: "OK",
+			}),
+		);
 
 		// Assert
-		expect(window.alert).toHaveBeenCalled();
 		expect(wrapper.emitted("dialogResult")).toBeUndefined();
 		wrapper.getByRole("dialog");
 	});
@@ -820,7 +821,6 @@ describe("updateEvent", () => {
 
 	it("indicates the event should be deleted and closes the dialog if the delete button is clicked and it's confirmed", async () => {
 		// Arrange
-		vi.mocked(window.confirm).mockReturnValue(true);
 		const event = getDefaultIcsEvent();
 		const wrapper = await callComponentFunction("updateEvent", {
 			event,
@@ -836,6 +836,11 @@ describe("updateEvent", () => {
 			name: "Delete",
 		});
 		await fireEvent.click(deleteButton);
+		await fireEvent.click(
+			within(wrapper.getByRole("alertdialog")).getByRole("button", {
+				name: "Yes",
+			}),
+		);
 
 		// Assert
 		const expectedEmit: EventEditDialogResult = {
@@ -847,7 +852,6 @@ describe("updateEvent", () => {
 
 	it("doesn't return or close the dialog if the delete button is clicked but it's not confirmed", async () => {
 		// Arrange
-		vi.mocked(window.confirm).mockReturnValue(false);
 		const event = getDefaultIcsEvent();
 		const wrapper = await callComponentFunction("updateEvent", {
 			event,
@@ -863,6 +867,11 @@ describe("updateEvent", () => {
 			name: "Delete",
 		});
 		await fireEvent.click(deleteButton);
+		await fireEvent.click(
+			within(wrapper.getByRole("alertdialog")).getByRole("button", {
+				name: "No",
+			}),
+		);
 
 		// Assert
 		expect(wrapper.emitted("dialogResult")).toBeUndefined();

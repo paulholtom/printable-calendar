@@ -19,7 +19,6 @@ beforeEach(() => {
 	vi.resetAllMocks();
 
 	window.electronApi = mockElectronApi;
-	window.alert = vi.fn();
 });
 
 it("sets the month from the user config", async () => {

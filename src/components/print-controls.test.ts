@@ -5,7 +5,7 @@ import {
 	USER_CONFIG_KEY,
 	UserConfig,
 } from "@/user-config";
-import { fireEvent, render } from "@testing-library/vue";
+import { fireEvent, render, within } from "@testing-library/vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick, ref } from "vue";
 import PrintControls from "./print-controls.vue";
@@ -24,7 +24,6 @@ beforeEach(() => {
 	vi.resetAllMocks();
 
 	window.electronApi = mockElectronApi;
-	window.alert = vi.fn();
 });
 
 describe("select PDF directory", () => {
@@ -92,10 +91,11 @@ describe("Print PDF", () => {
 		});
 		await fireEvent.click(printPdfButton);
 		await nextTick();
+		await nextTick();
 
 		// Assert
 		expect(mockElectronApi.printToPdf).toHaveBeenCalledWith(expectedPath);
-		expect(window.alert).toHaveBeenCalledWith(
+		within(wrapper.getByRole("alertdialog")).getByText(
 			`PDF file created: ${expectedPath}`,
 		);
 	});
@@ -117,10 +117,11 @@ describe("Print PDF", () => {
 		});
 		await fireEvent.click(printPdfButton);
 		await nextTick();
+		await nextTick();
 
 		// Assert
 		expect(mockElectronApi.printToPdf).toHaveBeenCalledWith(expectedPath);
-		expect(window.alert).toHaveBeenCalledWith(
+		within(wrapper.getByRole("alertdialog")).getByText(
 			`PDF file created: ${expectedPath}`,
 		);
 	});
