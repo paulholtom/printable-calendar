@@ -2,7 +2,7 @@
 	<DialogLayout
 		title="Confirm"
 		role="alertdialog"
-		v-model:is-open="showDialog"
+		:is-open="showDialog"
 		:include-close-button="false"
 		class="confirm-dialog"
 	>
