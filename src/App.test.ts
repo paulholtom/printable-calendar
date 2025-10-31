@@ -52,7 +52,7 @@ function getUserConfigWithRequiredSettings(): UserConfig {
 }
 
 function createFilePromises(fileContents?: {
-	userConfig?: UserConfig;
+	userConfig?: UserConfig | string;
 	calendar?: IcsCalendar | string;
 }): Promise<unknown>[] {
 	// Config file
@@ -62,9 +62,12 @@ function createFilePromises(fileContents?: {
 		() => configFilePromise,
 	);
 	resolveConfigFilePromise(
-		JSON.stringify(
-			fileContents?.userConfig ?? getUserConfigWithRequiredSettings(),
-		),
+		typeof fileContents?.userConfig === "string"
+			? fileContents.userConfig
+			: JSON.stringify(
+					fileContents?.userConfig ??
+						getUserConfigWithRequiredSettings(),
+				),
 	);
 
 	const {
@@ -123,6 +126,24 @@ it("does not initially display any dialogs", async () => {
 });
 
 describe("configFile", () => {
+	it("displays an error if there is an issue parsing the file", async () => {
+		// Arrange
+		const userConfig = "bad file";
+		const filePromises = createFilePromises({ userConfig });
+
+		// Act
+		const wrapper = render(App);
+		// wait for the file to be parsed.
+		await Promise.all(filePromises);
+		await nextTick();
+
+		// Assert
+		expect(mockElectronApi.writeCalendarFile).not.toHaveBeenCalled();
+		expect(wrapper.getByRole("alert").textContent).contains(
+			"Error reading config file",
+		);
+	});
+
 	it("parses and provides the config file without writing it back out immediately", async () => {
 		// Arrange
 		const pdfDirectory = "directory-from-config";
