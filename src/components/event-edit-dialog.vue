@@ -9,7 +9,7 @@
 		<ConfirmDialog ref="confirmDialog" />
 		<div class="input-and-label">
 			<label :for="getInputId('calendar')">Calendar</label>
-			<select v-model="calendar">
+			<select v-model="calendar" :id="getInputId('calendar')">
 				<option
 					v-for="calendarName in calendarNames"
 					:key="calendarName"

@@ -129,14 +129,19 @@ const icsCalendarCollection = ref<IcsCalendarCollection>(
 );
 let calendarCollectionWatchHandle: WatchHandle | undefined = undefined;
 async function setupIcsCalendarCollection(): Promise<void> {
+	calendarCollectionWatchHandle?.();
+	calendarCollectionWatchHandle = undefined;
 	if (configFile.value.calendarDirectory === undefined) {
 		return;
 	}
-	calendarCollectionWatchHandle?.();
 	calendarFilesLoaded.value = false;
 	const fileContents = await window.electronApi.readCalendarFiles(
 		configFile.value.calendarDirectory,
 	);
+
+	for (const existingCalendar of Object.keys(icsCalendarCollection.value)) {
+		icsCalendarCollection.value[existingCalendar] = undefined;
+	}
 
 	for (const [calendarName, calendarFileContents] of Object.entries(
 		fileContents,
@@ -180,6 +185,8 @@ async function setupIcsCalendarCollection(): Promise<void> {
 				if (calendar === undefined) {
 					continue;
 				}
+				// This code isn't reachable by any user interactions it's only here to satisfy typescript.
+				/* c8 ignore start */
 				if (configFile.value.calendarDirectory === undefined) {
 					errors.value.push(
 						new Error(
@@ -188,6 +195,7 @@ async function setupIcsCalendarCollection(): Promise<void> {
 					);
 					return;
 				}
+				/* c8 ignore stop */
 				window.electronApi.writeCalendarFile(
 					configFile.value.calendarDirectory,
 					calendarName,
@@ -225,17 +233,23 @@ async function addEvent(date?: Date) {
 }
 
 function addEventToCalendar(event: IcsEvent, calendarName: string): void {
+	// There's no user interaction that can cause this to be called with a calendar name that isn't in the collection, this ternary is necessary to satify typescript.
+	/* c8 ignore start */
 	const cal =
 		icsCalendarCollection.value[calendarName] ?? getDefaultIcsCalendar();
+	/* c8 ignore stop */
 	if (!cal.events) {
 		cal.events = [];
 	}
 
 	cal.events.push(event);
 
+	// This code isn't reachable by any user interactions it's only here to satisfy typescript.
+	/* c8 ignore start */
 	if (!icsCalendarCollection.value[calendarName]) {
 		icsCalendarCollection.value[calendarName] = cal;
 	}
+	/* c8 ignore stop */
 }
 
 async function editEvent(event: EventOccurrence) {

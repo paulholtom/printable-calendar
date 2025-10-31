@@ -38,7 +38,8 @@ beforeEach(() => {
 });
 
 const CALENDAR_DIRECTORY = "calendar-directory";
-const CALENDAR_NAME = "calendar-name";
+const FIRST_CALENDAR_NAME = "first-calendar-name";
+const SECOND_CALENDAR_NAME = "second-calendar-name";
 
 /**
  * @returns Gets a user config with the settings required to show the primary components.
@@ -47,13 +48,13 @@ function getUserConfigWithRequiredSettings(): UserConfig {
 	return {
 		...getDefaultUserConfig(),
 		calendarDirectory: CALENDAR_DIRECTORY,
-		calendars: { [CALENDAR_NAME]: { disabled: false } },
+		calendars: { [FIRST_CALENDAR_NAME]: { disabled: false } },
 	};
 }
 
 function createFilePromises(fileContents?: {
 	userConfig?: UserConfig | string;
-	calendar?: IcsCalendar | string;
+	calendars?: Record<string, string>;
 }): Promise<unknown>[] {
 	// Config file
 	const { promise: configFilePromise, resolve: resolveConfigFilePromise } =
@@ -78,19 +79,22 @@ function createFilePromises(fileContents?: {
 		() => calendarFilesPromise,
 	);
 	resolveCalendarFilesPromise(
-		typeof fileContents?.calendar === "string"
-			? { [CALENDAR_NAME]: fileContents.calendar }
-			: fileContents?.calendar
-				? {
-						[CALENDAR_NAME]: generateIcsCalendar(
-							fileContents.calendar,
-						),
-					}
-				: {
-						[CALENDAR_NAME]: generateIcsCalendar(
-							getDefaultIcsCalendar(),
-						),
-					},
+		fileContents?.calendars ?? {
+			[FIRST_CALENDAR_NAME]: generateIcsCalendar(getDefaultIcsCalendar()),
+		},
+		// typeof fileContents?.calendar === "string"
+		// 	? { [CALENDAR_NAME]: fileContents.calendar }
+		// 	: fileContents?.calendar
+		// 		? {
+		// 				[CALENDAR_NAME]: generateIcsCalendar(
+		// 					fileContents.calendar,
+		// 				),
+		// 			}
+		// 		: {
+		// 				[CALENDAR_NAME]: generateIcsCalendar(
+		// 					getDefaultIcsCalendar(),
+		// 				),
+		// 			},
 	);
 
 	return [configFilePromise, calendarFilesPromise];
@@ -191,11 +195,13 @@ describe("configFile", () => {
 	});
 });
 
-describe("calendarEventsFile", () => {
+describe("calendar collection", () => {
 	it("displays an error if there is an issue parsing the file", async () => {
 		// Arrange
 		const calendar = "bad file";
-		const filePromises = createFilePromises({ calendar });
+		const filePromises = createFilePromises({
+			calendars: { [FIRST_CALENDAR_NAME]: calendar },
+		});
 
 		// Act
 		const wrapper = render(App);
@@ -225,7 +231,55 @@ describe("calendarEventsFile", () => {
 		expect(mockElectronApi.writeCalendarFile).not.toHaveBeenCalled();
 		const expectedCollection: IcsCalendarCollection = {
 			...getDefaultIcsCalendarCollection(),
-			[CALENDAR_NAME]: calendar,
+			[FIRST_CALENDAR_NAME]: calendar,
+		};
+		expect(
+			vi.mocked(provideIcsCalendarCollection).mock.calls[0][0].value,
+		).toEqual(expectedCollection);
+	});
+
+	it("parses and provides the calendar event collection from the new location when the calendar directory is changed without writing it back out immediately", async () => {
+		// Arrange
+		const originalCalendar: IcsCalendar = {
+			...getDefaultIcsCalendar(),
+			name: "original",
+		};
+		const filePromises = createFilePromises({
+			calendars: {
+				[FIRST_CALENDAR_NAME]: generateIcsCalendar(originalCalendar),
+			},
+		});
+		const {
+			promise: altCalendarFilesPromise,
+			resolve: resolveAltCalendarFilesPromise,
+		} = Promise.withResolvers<CalendarFileContents>();
+		const altCalendarName = "different-calendar";
+		const altCalendar: IcsCalendar = {
+			...getDefaultIcsCalendar(),
+			name: "alternte",
+		};
+		mockElectronApi.readCalendarFiles.mockImplementationOnce(
+			() => altCalendarFilesPromise,
+		);
+		resolveAltCalendarFilesPromise({
+			[altCalendarName]: generateIcsCalendar(altCalendar),
+		});
+		mockElectronApi.selectDirectory.mockResolvedValueOnce("new-directory");
+
+		// Act
+		const wrapper = render(App);
+		await Promise.all(filePromises);
+		await nextTick();
+		await fireEvent.click(
+			wrapper.getByRole("button", { name: "Select Calendar Directory" }),
+		);
+		await altCalendarFilesPromise;
+
+		// Assert
+		expect(mockElectronApi.writeCalendarFile).not.toHaveBeenCalled();
+		const expectedCollection: IcsCalendarCollection = {
+			...getDefaultIcsCalendarCollection(),
+			[altCalendarName]: altCalendar,
 		};
 		expect(
 			vi.mocked(provideIcsCalendarCollection).mock.calls[0][0].value,
@@ -236,15 +290,17 @@ describe("calendarEventsFile", () => {
 		// Arrange
 		const newEvent = getDefaultIcsEvent();
 		const calendar: IcsCalendar = getDefaultIcsCalendar();
-		const filePromises = createFilePromises({ calendar });
+		const filePromises = createFilePromises({
+			calendars: { [FIRST_CALENDAR_NAME]: generateIcsCalendar(calendar) },
+		});
 		render(App);
 		await Promise.all(filePromises);
 
 		// Act
 		const providedCalendarCollection = getProvidedCalendarCollection();
-		if (providedCalendarCollection.value[CALENDAR_NAME]) {
-			providedCalendarCollection.value[CALENDAR_NAME].events = [];
-			providedCalendarCollection.value[CALENDAR_NAME].events.push(
+		if (providedCalendarCollection.value[FIRST_CALENDAR_NAME]) {
+			providedCalendarCollection.value[FIRST_CALENDAR_NAME].events = [];
+			providedCalendarCollection.value[FIRST_CALENDAR_NAME].events.push(
 				newEvent,
 			);
 		}
@@ -258,8 +314,43 @@ describe("calendarEventsFile", () => {
 		};
 		expect(mockElectronApi.writeCalendarFile).toHaveBeenCalledWith(
 			CALENDAR_DIRECTORY,
-			CALENDAR_NAME,
+			FIRST_CALENDAR_NAME,
 			generateIcsCalendar(expectedEvents),
+		);
+	});
+
+	it("does not overwrite existing files if a calendar is removed from the collection", async () => {
+		// Arrange
+		const filePromises = createFilePromises();
+		render(App);
+		await Promise.all(filePromises);
+
+		// Act
+		const providedCalendarCollection = getProvidedCalendarCollection();
+		if (providedCalendarCollection.value[FIRST_CALENDAR_NAME]) {
+			providedCalendarCollection.value[FIRST_CALENDAR_NAME] = undefined;
+		}
+		await nextTick();
+
+		// Assert
+		expect(mockElectronApi.writeCalendarFile).not.toHaveBeenCalled();
+	});
+
+	it("displays a warning if trying to add an event when no calendars exist", async () => {
+		// Arrange
+		const filePromises = createFilePromises({ calendars: {} });
+		const wrapper = render(App);
+		await Promise.all(filePromises);
+		await nextTick();
+
+		// Act
+		await fireEvent.click(
+			wrapper.getByRole("button", { name: "Add Event" }),
+		);
+
+		// Assert
+		within(wrapper.getByRole("alertdialog")).getByText(
+			"Tried to add an event while there are no available calendars.",
 		);
 	});
 });
@@ -376,7 +467,7 @@ describe("event editing", () => {
 
 		// Assert
 		const collection = getProvidedCalendarCollection();
-		expect(collection.value[CALENDAR_NAME]?.events).toEqual([
+		expect(collection.value[FIRST_CALENDAR_NAME]?.events).toEqual([
 			expect.objectContaining({
 				summary: newEventSummary,
 				start: expect.objectContaining({ date: new Date(2010, 4, 3) }),
@@ -406,7 +497,9 @@ describe("event editing", () => {
 
 			// Assert
 			const collection = getProvidedCalendarCollection();
-			expect(collection.value[CALENDAR_NAME]?.events).toBeUndefined();
+			expect(
+				collection.value[FIRST_CALENDAR_NAME]?.events,
+			).toBeUndefined();
 		},
 	);
 
@@ -428,7 +521,12 @@ describe("event editing", () => {
 		];
 		const filePromises = createFilePromises({
 			userConfig,
-			calendar,
+			calendars: {
+				[FIRST_CALENDAR_NAME]: generateIcsCalendar(calendar),
+				[SECOND_CALENDAR_NAME]: generateIcsCalendar(
+					getDefaultIcsCalendar(),
+				),
+			},
 		});
 		const wrapper = render(App);
 		await Promise.all(filePromises);
@@ -457,8 +555,8 @@ describe("event editing", () => {
 
 		// Act
 		const calendarCollection = getProvidedCalendarCollection();
-		if (calendarCollection.value[CALENDAR_NAME]) {
-			calendarCollection.value[CALENDAR_NAME].events = [];
+		if (calendarCollection.value[FIRST_CALENDAR_NAME]) {
+			calendarCollection.value[FIRST_CALENDAR_NAME].events = [];
 		}
 		const eventDisplay = wrapper.getByText(eventSummary);
 		await fireEvent.click(eventDisplay);
@@ -488,7 +586,9 @@ describe("event editing", () => {
 		);
 
 		// Assert
-		expect(calendarCollection.value[CALENDAR_NAME]?.events).toEqual([]);
+		expect(calendarCollection.value[FIRST_CALENDAR_NAME]?.events).toEqual(
+			[],
+		);
 	});
 
 	it("updates an event if the save button is clicked", async () => {
@@ -509,8 +609,32 @@ describe("event editing", () => {
 
 		// Assert
 		expect(
-			calendarCollection.value[CALENDAR_NAME]?.events?.[0].summary,
+			calendarCollection.value[FIRST_CALENDAR_NAME]?.events?.[0].summary,
 		).toEqual(newEventSummary);
+	});
+
+	it("removes an event from the original calendar and adds it to the new one if the calendar is changed during editing", async () => {
+		// Arrange
+		const originalEventSummary = "My Event";
+		const wrapper = await renderAppWithClickableEvent(originalEventSummary);
+		const calendarCollection = getProvidedCalendarCollection();
+
+		// Act
+		const eventDisplay = wrapper.getByText(originalEventSummary);
+		await fireEvent.click(eventDisplay);
+		const dialog = wrapper.getByRole("dialog");
+		const calendarInput = within(dialog).getByLabelText("Calendar");
+		await fireEvent.update(calendarInput, SECOND_CALENDAR_NAME);
+		const saveButton = within(dialog).getByRole("button", { name: "Save" });
+		await fireEvent.click(saveButton);
+
+		// Assert
+		expect(calendarCollection.value[FIRST_CALENDAR_NAME]?.events).toEqual(
+			[],
+		);
+		expect(calendarCollection.value[SECOND_CALENDAR_NAME]?.events).toEqual([
+			expect.objectContaining({ summary: originalEventSummary }),
+		]);
 	});
 
 	it("does not update the original event if cancel is clicked", async () => {
@@ -533,7 +657,7 @@ describe("event editing", () => {
 
 		// Assert
 		expect(
-			calendarCollection.value[CALENDAR_NAME]?.events?.[0].summary,
+			calendarCollection.value[FIRST_CALENDAR_NAME]?.events?.[0].summary,
 		).toEqual(originalEventSummary);
 	});
 });
