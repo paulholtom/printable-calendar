@@ -33,12 +33,66 @@ it("displays provided events", () => {
 		props: {
 			date,
 			variant: "current-month",
-			events: [{ date, sourceCalendar: "default", event }],
+			events: [
+				{ date, instanceOfEvent: 0, sourceCalendar: "default", event },
+			],
 		},
 	});
 
 	// Assert
 	wrapper.getByText(event.summary);
+});
+
+it("displays the summary for the 0th instance of an event, even if there's an ordinal display specified", () => {
+	// Arrange
+	const date = new Date(2025, 5, 10);
+	const event: IcsEvent = {
+		...getDefaultIcsEvent(),
+		summary: "Some Event",
+		nonStandard: {
+			ordinalDisplay: { before: "Don't", after: "Show" },
+		},
+	};
+
+	// Act
+	const wrapper = render(CalendarDay, {
+		props: {
+			date,
+			variant: "current-month",
+			events: [
+				{ date, instanceOfEvent: 0, sourceCalendar: "default", event },
+			],
+		},
+	});
+
+	// Assert
+	wrapper.getByText(event.summary);
+});
+
+it("uses the ordinal display settings for an instance other than 0", () => {
+	// Arrange
+	const date = new Date(2025, 5, 10);
+	const event: IcsEvent = {
+		...getDefaultIcsEvent(),
+		summary: "Some Event",
+		nonStandard: {
+			ordinalDisplay: { before: "The", after: "Time" },
+		},
+	};
+
+	// Act
+	const wrapper = render(CalendarDay, {
+		props: {
+			date,
+			variant: "current-month",
+			events: [
+				{ date, instanceOfEvent: 1, sourceCalendar: "default", event },
+			],
+		},
+	});
+
+	// Assert
+	wrapper.getByText("The 1st Time");
 });
 
 it("displays time if an event date is a DATE-TIME", () => {
@@ -58,7 +112,9 @@ it("displays time if an event date is a DATE-TIME", () => {
 		props: {
 			date,
 			variant: "current-month",
-			events: [{ date, sourceCalendar: "default", event }],
+			events: [
+				{ date, instanceOfEvent: 0, sourceCalendar: "default", event },
+			],
 		},
 	});
 
@@ -88,7 +144,9 @@ it("doesn't display the time if an event date is a DATE", () => {
 		props: {
 			date,
 			variant: "current-month",
-			events: [{ date, sourceCalendar: "default", event }],
+			events: [
+				{ date, instanceOfEvent: 0, sourceCalendar: "default", event },
+			],
 		},
 	});
 
@@ -133,7 +191,9 @@ it("emits when an event is clicked", async () => {
 		props: {
 			date,
 			variant: "current-month",
-			events: [{ date, sourceCalendar: "default", event }],
+			events: [
+				{ date, instanceOfEvent: 0, sourceCalendar: "default", event },
+			],
 		},
 	});
 	const eventDisplay = wrapper.getByText(event.summary);
@@ -144,6 +204,7 @@ it("emits when an event is clicked", async () => {
 	// Assert
 	const expectedResult: EventOccurrence = {
 		date,
+		instanceOfEvent: 0,
 		sourceCalendar: "default",
 		event,
 	};

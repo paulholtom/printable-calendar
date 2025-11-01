@@ -120,6 +120,7 @@ it("emits if an event was clicked", async () => {
 	// Assert
 	const expectedResult: EventOccurrence = {
 		date: event.start.date,
+		instanceOfEvent: 0,
 		sourceCalendar: calendarName,
 		event,
 	};

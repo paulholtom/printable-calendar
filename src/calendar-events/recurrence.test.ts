@@ -21,7 +21,7 @@ describe(getDaysForEventInRange, () => {
 		event: IcsEvent;
 		rangeStart: Date;
 		rangeEnd: Date;
-		expected: Date[];
+		expected: ReturnType<typeof getDaysForEventInRange>;
 	}>([
 		{
 			produces: "The event start date",
@@ -32,7 +32,9 @@ describe(getDaysForEventInRange, () => {
 			},
 			rangeStart: new Date(Date.UTC(2025, 5, 1)),
 			rangeEnd: new Date(Date.UTC(2025, 6, 0)),
-			expected: [new Date(Date.UTC(2025, 5, 5))],
+			expected: [
+				{ date: new Date(Date.UTC(2025, 5, 5)), instanceOfEvent: 0 },
+			],
 		},
 		{
 			produces: "An empty array",
@@ -68,7 +70,9 @@ describe(getDaysForEventInRange, () => {
 			},
 			rangeStart: new Date(Date.UTC(2025, 5, 1)),
 			rangeEnd: new Date(Date.UTC(2025, 6, 0)),
-			expected: [new Date(Date.UTC(2025, 5, 5))],
+			expected: [
+				{ date: new Date(Date.UTC(2025, 5, 5)), instanceOfEvent: 10 },
+			],
 		},
 		{
 			produces: "An empty array",
@@ -190,6 +194,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 				7: [
 					{
 						date: new Date(2025, 5, 7),
+						instanceOfEvent: 0,
 						sourceCalendar: "default",
 						event,
 					},
@@ -240,6 +245,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 				7: [
 					{
 						date: new Date(2025, 5, 7),
+						instanceOfEvent: 0,
 						sourceCalendar: "default",
 						event: eventValid,
 					},
@@ -280,6 +286,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 				5: [
 					{
 						date: new Date(2025, 5, 5),
+						instanceOfEvent: 3,
 						sourceCalendar: "default",
 						event,
 					},
@@ -287,6 +294,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 				6: [
 					{
 						date: new Date(2025, 5, 6),
+						instanceOfEvent: 4,
 						sourceCalendar: "default",
 						event,
 					},
@@ -327,6 +335,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 				6: [
 					{
 						date: new Date(2025, 5, 6),
+						instanceOfEvent: 0,
 						sourceCalendar: "default",
 						event,
 					},
@@ -334,6 +343,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 				7: [
 					{
 						date: new Date(2025, 5, 7),
+						instanceOfEvent: 1,
 						sourceCalendar: "default",
 						event,
 					},
@@ -358,7 +368,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 						day: "SU",
 						occurrence: 4,
 					},
-					// This gets ingored since a weekday with no occurrence isn't valid in this situation.
+					// This gets ignored since a weekday with no occurrence isn't valid in this situation.
 					{ day: "FR" },
 				],
 			},
@@ -386,6 +396,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 				[
 					{
 						date: new Date(2025, 9, 25),
+						instanceOfEvent: 0,
 						sourceCalendar: "default",
 						event,
 					},
@@ -396,6 +407,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 				[
 					{
 						date: new Date(2025, 9, 26),
+						instanceOfEvent: 1,
 						sourceCalendar: "default",
 						event,
 					},

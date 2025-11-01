@@ -7,6 +7,28 @@ import {
 	IcsWeekdayNumber,
 } from "./ts-ics-seam";
 
+/**
+ * A specific occurrence of an event.
+ */
+export type EventOccurrence = {
+	/**
+	 * The date and time of this specific occurence.
+	 */
+	date: Date;
+	/**
+	 * The instance of this event. Starts at 0.
+	 */
+	instanceOfEvent: number;
+	/**
+	 * The calendar the event came from.
+	 */
+	sourceCalendar: string;
+	/**
+	 * Details of the event.
+	 */
+	event: IcsEvent;
+};
+
 export const ICS_WEEKDAY_MAP: IcsWeekdayNumber["day"][] = [
 	"SU",
 	"MO",
@@ -41,15 +63,16 @@ export function getDaysForEventInRange(
 	event: IcsEvent,
 	rangeStart: Date,
 	rangeEnd: Date,
-): Date[] {
+): Pick<EventOccurrence, "date" | "instanceOfEvent">[] {
 	if (!event.recurrenceRule) {
 		if (dateInRange(event.start.date, rangeStart, rangeEnd)) {
-			return [event.start.date];
+			return [{ date: event.start.date, instanceOfEvent: 0 }];
 		}
 		return [];
 	}
 
 	// Monthly recurrence by weekday has some flaws in ts-ics. Work around those.
+	let allDates: Date[] = [];
 	if (
 		event.recurrenceRule.frequency === "MONTHLY" &&
 		event.recurrenceRule.byDay
@@ -75,7 +98,7 @@ export function getDaysForEventInRange(
 			),
 		};
 
-		return [
+		allDates = [
 			// Positve are ahead by 1 day, subtract 1 from the UTC date and combine with the event time.
 			...extendByRecurrenceRule(positiveOccurences, {
 				start: event.start.date,
@@ -105,32 +128,28 @@ export function getDaysForEventInRange(
 						event.start.date.getMinutes(),
 					),
 			),
-		].filter((date) => dateInRange(date, rangeStart, rangeEnd));
+		];
+	} else {
+		allDates = extendByRecurrenceRule(event.recurrenceRule, {
+			start: event.start.date,
+			end: rangeEnd,
+		});
 	}
 
-	return extendByRecurrenceRule(event.recurrenceRule, {
-		start: event.start.date,
-		end: rangeEnd,
-	}).filter((date) => dateInRange(date, rangeStart, rangeEnd));
-}
+	allDates.sort((a, b) => a.getTime() - b.getTime());
 
-/**
- * A specific occurrence of an event.
- */
-export type EventOccurrence = {
-	/**
-	 * The date and time of this specific occurence.
-	 */
-	date: Date;
-	/**
-	 * The calendar the event came from.
-	 */
-	sourceCalendar: string;
-	/**
-	 * Details of the event.
-	 */
-	event: IcsEvent;
-};
+	const datesAndInstances: ReturnType<typeof getDaysForEventInRange> = [];
+
+	for (let instance = 0; instance < allDates.length; ++instance) {
+		if (allDates[instance] >= rangeStart) {
+			datesAndInstances.push({
+				date: allDates[instance],
+				instanceOfEvent: instance,
+			});
+		}
+	}
+	return datesAndInstances;
+}
 
 /**
  * Event occurences grouped and sorted by date.
@@ -169,10 +188,11 @@ export function getEventsByDateFromCalendarCollection<
 
 			datesOfEvent.forEach((eventDate) => {
 				const dateWithoutTime = new Date(
-					eventDate.toDateString(),
+					eventDate.date.toDateString(),
 				).getTime();
 				events.get(dateWithoutTime)?.push({
-					date: eventDate,
+					date: eventDate.date,
+					instanceOfEvent: eventDate.instanceOfEvent,
 					sourceCalendar: calendarName,
 					event,
 				});

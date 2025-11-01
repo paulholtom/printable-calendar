@@ -19,13 +19,14 @@
 					})
 				}}
 			</span>
-			<span class="summary">{{ event.event.summary }}</span>
+			<span class="summary">{{ getEventName(event) }}</span>
 		</p>
 	</section>
 </template>
 
 <script setup lang="ts">
 import { EventOccurrence } from "@/calendar-events";
+import { addOrdinalSuffix } from "@/services";
 import { CalendarDayVariant } from "./calendar-day-variant";
 
 defineProps<{
@@ -47,6 +48,17 @@ defineEmits<{
 	eventClicked: [event: EventOccurrence];
 	dayClicked: [day: Date];
 }>();
+
+function getEventName(event: EventOccurrence) {
+	if (
+		event.instanceOfEvent === 0 ||
+		event.event.nonStandard?.ordinalDisplay === undefined
+	) {
+		return event.event.summary;
+	}
+
+	return `${event.event.nonStandard.ordinalDisplay.before} ${addOrdinalSuffix(event.instanceOfEvent)} ${event.event.nonStandard.ordinalDisplay.after}`;
+}
 </script>
 
 <style lang="css" scoped>
