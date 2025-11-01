@@ -5,9 +5,10 @@ import {
 	getDefaultIcsEvent,
 	IcsCalendarCollection,
 	provideIcsCalendarCollection,
+	serializeIcsCalendar,
 } from "@/calendar-events";
 import { fireEvent, render, RenderResult, within } from "@testing-library/vue";
-import { generateIcsCalendar, IcsCalendar, IcsEvent } from "ts-ics";
+import { IcsCalendar, IcsEvent } from "ts-ics";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 import App from "./App.vue";
@@ -80,21 +81,10 @@ function createFilePromises(fileContents?: {
 	);
 	resolveCalendarFilesPromise(
 		fileContents?.calendars ?? {
-			[FIRST_CALENDAR_NAME]: generateIcsCalendar(getDefaultIcsCalendar()),
+			[FIRST_CALENDAR_NAME]: serializeIcsCalendar(
+				getDefaultIcsCalendar(),
+			),
 		},
-		// typeof fileContents?.calendar === "string"
-		// 	? { [CALENDAR_NAME]: fileContents.calendar }
-		// 	: fileContents?.calendar
-		// 		? {
-		// 				[CALENDAR_NAME]: generateIcsCalendar(
-		// 					fileContents.calendar,
-		// 				),
-		// 			}
-		// 		: {
-		// 				[CALENDAR_NAME]: generateIcsCalendar(
-		// 					getDefaultIcsCalendar(),
-		// 				),
-		// 			},
 	);
 
 	return [configFilePromise, calendarFilesPromise];
@@ -246,7 +236,7 @@ describe("calendar collection", () => {
 		};
 		const filePromises = createFilePromises({
 			calendars: {
-				[FIRST_CALENDAR_NAME]: generateIcsCalendar(originalCalendar),
+				[FIRST_CALENDAR_NAME]: serializeIcsCalendar(originalCalendar),
 			},
 		});
 		const {
@@ -262,7 +252,7 @@ describe("calendar collection", () => {
 			() => altCalendarFilesPromise,
 		);
 		resolveAltCalendarFilesPromise({
-			[altCalendarName]: generateIcsCalendar(altCalendar),
+			[altCalendarName]: serializeIcsCalendar(altCalendar),
 		});
 		mockElectronApi.selectDirectory.mockResolvedValueOnce("new-directory");
 
@@ -291,7 +281,9 @@ describe("calendar collection", () => {
 		const newEvent = getDefaultIcsEvent();
 		const calendar: IcsCalendar = getDefaultIcsCalendar();
 		const filePromises = createFilePromises({
-			calendars: { [FIRST_CALENDAR_NAME]: generateIcsCalendar(calendar) },
+			calendars: {
+				[FIRST_CALENDAR_NAME]: serializeIcsCalendar(calendar),
+			},
 		});
 		render(App);
 		await Promise.all(filePromises);
@@ -315,7 +307,7 @@ describe("calendar collection", () => {
 		expect(mockElectronApi.writeCalendarFile).toHaveBeenCalledWith(
 			CALENDAR_DIRECTORY,
 			FIRST_CALENDAR_NAME,
-			generateIcsCalendar(expectedEvents),
+			serializeIcsCalendar(expectedEvents),
 		);
 	});
 
@@ -522,8 +514,8 @@ describe("event editing", () => {
 		const filePromises = createFilePromises({
 			userConfig,
 			calendars: {
-				[FIRST_CALENDAR_NAME]: generateIcsCalendar(calendar),
-				[SECOND_CALENDAR_NAME]: generateIcsCalendar(
+				[FIRST_CALENDAR_NAME]: serializeIcsCalendar(calendar),
+				[SECOND_CALENDAR_NAME]: serializeIcsCalendar(
 					getDefaultIcsCalendar(),
 				),
 			},

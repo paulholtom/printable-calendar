@@ -1,4 +1,3 @@
-import { generateIcsCalendar } from "ts-ics";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	getDefaultIcsCalendar,
@@ -150,7 +149,7 @@ describe(parseIcsCalendarString, () => {
 		const calendar = getDefaultIcsCalendar();
 
 		// Act
-		const result = parseIcsCalendarString(generateIcsCalendar(calendar));
+		const result = parseIcsCalendarString(serializeIcsCalendar(calendar));
 
 		// Assert
 		expect(result).toEqual(calendar);
