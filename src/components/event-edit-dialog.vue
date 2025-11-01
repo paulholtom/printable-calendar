@@ -20,6 +20,36 @@
 			</select>
 		</div>
 		<div class="input-and-label">
+			<input
+				type="checkbox"
+				:id="getInputId('displayWithOrdinal')"
+				v-model="displayWithOrdinal"
+			/>
+			<label :for="getInputId('displayWithOrdinal')"
+				>Display with ordinal</label
+			>
+		</div>
+		<template
+			v-if="isOrdinalDisplay(eventModel.nonStandard?.ordinalDisplay)"
+		>
+			<div class="input-and-label">
+				<label :for="getInputId('beforeOrdinal')">Before ordinal</label>
+				<input
+					type="text"
+					:id="getInputId('beforeOrdinal')"
+					v-model="eventModel.nonStandard.ordinalDisplay.before"
+				/>
+			</div>
+			<div class="input-and-label">
+				<label :for="getInputId('afterOrdinal')">After ordinal</label>
+				<input
+					type="text"
+					:id="getInputId('afterOrdinal')"
+					v-model="eventModel.nonStandard.ordinalDisplay.after"
+				/>
+			</div>
+		</template>
+		<div class="input-and-label">
 			<label :for="getInputId('date')">Date</label>
 			<input :id="getInputId('date')" type="date" v-model="dateModel" />
 		</div>
@@ -111,8 +141,12 @@
 </template>
 
 <script setup lang="ts">
-import { getDefaultIcsEvent, ICS_WEEKDAY_MAP } from "@/calendar-events";
-import { IcsEvent, IcsRecurrenceRuleFrequency } from "ts-ics";
+import {
+	getDefaultIcsEvent,
+	ICS_WEEKDAY_MAP,
+	IcsEvent,
+	IcsRecurrenceRuleFrequency,
+} from "@/calendar-events";
 import { computed, ref, toRaw, useTemplateRef } from "vue";
 import AlertDialog from "./alert-dialog.vue";
 import ConfirmDialog from "./confirm-dialog.vue";
@@ -260,6 +294,49 @@ const monthlyType = computed<keyof typeof monthlyTypes>({
 		}
 	},
 });
+
+const displayWithOrdinal = computed({
+	get() {
+		return isOrdinalDisplay(eventModel.value.nonStandard?.ordinalDisplay);
+	},
+	set(newValue) {
+		if (newValue) {
+			if (!eventModel.value.nonStandard) {
+				eventModel.value.nonStandard = {};
+			}
+			eventModel.value.nonStandard.ordinalDisplay = {
+				before: "",
+				after: "",
+			};
+		} else {
+			if (eventModel.value.nonStandard) {
+				eventModel.value.nonStandard.ordinalDisplay = undefined;
+			}
+		}
+	},
+});
+
+type OrdinalDisplaySettings = {
+	/**
+	 * Text to display before the ordinal.
+	 */
+	before: string;
+	/**
+	 * Text to display after the ordinal.
+	 */
+	after: string;
+};
+
+function isOrdinalDisplay(obj: unknown): obj is OrdinalDisplaySettings {
+	return (
+		typeof obj === "object" &&
+		obj !== null &&
+		"before" in obj &&
+		typeof obj.before === "string" &&
+		"after" in obj &&
+		typeof obj.after === "string"
+	);
+}
 
 function cancel() {
 	promiseResolver?.({ action: EVENT_EDIT_DIALOG_ACTION.CANCEL });

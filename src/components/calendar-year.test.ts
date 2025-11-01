@@ -5,10 +5,10 @@ import {
 	getDefaultIcsEvent,
 	getEventsByDateFromCalendarCollection,
 	ICS_CALENDAR_COLLECTION_KEY,
+	IcsEvent,
 } from "@/calendar-events";
 import { getDefaultUserConfig, USER_CONFIG_KEY } from "@/user-config";
 import { fireEvent, render, within } from "@testing-library/vue";
-import { IcsEvent } from "ts-ics";
 import { beforeEach, expect, it, vi } from "vitest";
 import { ref } from "vue";
 import CalendarYear from "./calendar-year.vue";

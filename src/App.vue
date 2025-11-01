@@ -38,7 +38,6 @@
 </template>
 
 <script setup lang="ts">
-import { IcsEvent } from "ts-ics";
 import { computed, ref, toRaw, useTemplateRef, watch, WatchHandle } from "vue";
 import {
 	EventOccurrence,
@@ -46,6 +45,7 @@ import {
 	getDefaultIcsCalendarCollection,
 	getDefaultIcsEvent,
 	IcsCalendarCollection,
+	IcsEvent,
 	parseIcsCalendarString,
 	provideIcsCalendarCollection,
 	serializeIcsCalendar,

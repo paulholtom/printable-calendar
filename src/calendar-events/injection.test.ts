@@ -5,7 +5,7 @@ import {
 	provideIcsCalendarCollection,
 	useIcsCalendarCollection,
 } from "./injection";
-import { getDefaultIcsCalendarCollection } from "./parsing";
+import { getDefaultIcsCalendarCollection } from "./ts-ics-seam";
 
 vi.mock(import("vue"));
 

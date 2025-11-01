@@ -29,9 +29,8 @@
 </template>
 
 <script setup lang="ts">
-import { ICS_WEEKDAY_MAP } from "@/calendar-events";
+import { ICS_WEEKDAY_MAP, IcsWeekdayNumber } from "@/calendar-events";
 import { getDaysOfWeek } from "@/dates";
-import { IcsWeekdayNumber } from "ts-ics";
 import { computed } from "vue";
 
 const selectedValues = defineModel<IcsWeekdayNumber[]>({ required: true });

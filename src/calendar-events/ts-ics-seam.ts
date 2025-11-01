@@ -1,5 +1,40 @@
 import { parseIcsCalendar } from "@ts-ics/schema-zod";
-import { generateIcsCalendar, IcsCalendar, IcsEvent } from "ts-ics";
+import {
+	extendByRecurrenceRule,
+	generateIcsCalendar,
+	IcsCalendar as TsIcsCalendar,
+	IcsEvent as TsIcsEvent,
+	IcsRecurrenceRule as TsIcsRecurrenceRule,
+	IcsRecurrenceRuleFrequency as TsIcsRecurrenceRuleFrequency,
+	IcsWeekdayNumber as TsIcsWeekdayNumber,
+} from "ts-ics";
+
+/**
+ * A calendar.
+ */
+export type IcsCalendar = TsIcsCalendar;
+
+/**
+ * A single calendar event.
+ */
+export type IcsEvent = TsIcsEvent;
+
+/**
+ * Rules describe how an event recurrs.
+ */
+export type IcsRecurrenceRule = TsIcsRecurrenceRule;
+
+/**
+ * Describe a day of the week within an Ics object.
+ */
+export type IcsWeekdayNumber = TsIcsWeekdayNumber;
+
+/**
+ * The frequency of a recurrence rule.
+ */
+export type IcsRecurrenceRuleFrequency = TsIcsRecurrenceRuleFrequency;
+
+export { extendByRecurrenceRule };
 
 /**
  * @returns An event with defaults for all required values.

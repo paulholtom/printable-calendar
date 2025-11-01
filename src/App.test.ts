@@ -3,12 +3,13 @@ import {
 	getDefaultIcsCalendar,
 	getDefaultIcsCalendarCollection,
 	getDefaultIcsEvent,
+	IcsCalendar,
 	IcsCalendarCollection,
+	IcsEvent,
 	provideIcsCalendarCollection,
 	serializeIcsCalendar,
 } from "@/calendar-events";
 import { fireEvent, render, RenderResult, within } from "@testing-library/vue";
-import { IcsCalendar, IcsEvent } from "ts-ics";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 import App from "./App.vue";

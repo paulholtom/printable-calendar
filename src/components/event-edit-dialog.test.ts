@@ -1,7 +1,11 @@
-import { getDefaultIcsEvent } from "@/calendar-events";
+import {
+	getDefaultIcsEvent,
+	IcsEvent,
+	IcsRecurrenceRule,
+} from "@/calendar-events";
 import { getDaysOfWeek } from "@/dates";
 import { fireEvent, render, RenderResult, within } from "@testing-library/vue";
-import { IcsEvent, IcsRecurrenceRule } from "ts-ics";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, PropType } from "vue";
 import {

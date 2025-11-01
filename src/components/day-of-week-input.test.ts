@@ -1,6 +1,6 @@
+import { IcsWeekdayNumber } from "@/calendar-events";
 import { getDaysOfWeek } from "@/dates";
 import { fireEvent, render } from "@testing-library/vue";
-import { IcsWeekdayNumber } from "ts-ics";
 import { beforeEach, expect, it, vi } from "vitest";
 import DayOfWeekInput from "./day-of-week-input.vue";
 

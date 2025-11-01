@@ -1,18 +1,18 @@
 import { getDefaultUserConfig, UserConfig } from "@/user-config";
-import { IcsEvent } from "ts-ics";
 import { describe, expect, it } from "vitest";
-import {
-	getDefaultIcsCalendar,
-	getDefaultIcsCalendarCollection,
-	getDefaultIcsEvent,
-	IcsCalendarCollection,
-} from "./parsing";
 import {
 	EventOccurrence,
 	EventsByDate,
 	getDaysForEventInRange,
 	getEventsByDateFromCalendarCollection,
 } from "./recurrence";
+import {
+	getDefaultIcsCalendar,
+	getDefaultIcsCalendarCollection,
+	getDefaultIcsEvent,
+	IcsCalendarCollection,
+	IcsEvent,
+} from "./ts-ics-seam";
 
 describe(getDaysForEventInRange, () => {
 	it.each<{

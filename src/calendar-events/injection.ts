@@ -1,5 +1,5 @@
 import { inject, InjectionKey, provide, Ref } from "vue";
-import { IcsCalendarCollection } from "./parsing";
+import { IcsCalendarCollection } from "./ts-ics-seam";
 
 /**
  * The injection key for the calendar events.

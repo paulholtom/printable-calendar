@@ -5,7 +5,7 @@ import {
 	getDefaultIcsEvent,
 	parseIcsCalendarString,
 	serializeIcsCalendar,
-} from "./parsing";
+} from "./ts-ics-seam";
 
 beforeEach(() => {
 	vi.resetAllMocks();

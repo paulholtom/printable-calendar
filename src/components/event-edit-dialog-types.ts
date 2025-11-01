@@ -1,4 +1,4 @@
-import { IcsEvent } from "ts-ics";
+import { IcsEvent } from "@/calendar-events";
 
 /**
  * The action taken by the user that closed the event edit dialog.

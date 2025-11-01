@@ -1,11 +1,11 @@
 import { UserConfig } from "@/user-config";
 import {
 	extendByRecurrenceRule,
+	IcsCalendarCollection,
 	IcsEvent,
 	IcsRecurrenceRule,
 	IcsWeekdayNumber,
-} from "ts-ics";
-import { IcsCalendarCollection } from "./parsing";
+} from "./ts-ics-seam";
 
 export const ICS_WEEKDAY_MAP: IcsWeekdayNumber["day"][] = [
 	"SU",

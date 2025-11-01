@@ -1,6 +1,9 @@
-import { EventOccurrence, getDefaultIcsEvent } from "@/calendar-events";
+import {
+	EventOccurrence,
+	getDefaultIcsEvent,
+	IcsEvent,
+} from "@/calendar-events";
 import { fireEvent, render } from "@testing-library/vue";
-import { IcsEvent } from "ts-ics";
 import { expect, it } from "vitest";
 import CalendarDay from "./calendar-day.vue";
 
