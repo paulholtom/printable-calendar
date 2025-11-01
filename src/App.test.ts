@@ -233,7 +233,6 @@ describe("calendar collection", () => {
 		// Arrange
 		const originalCalendar: IcsCalendar = {
 			...getDefaultIcsCalendar(),
-			name: "original",
 		};
 		const filePromises = createFilePromises({
 			calendars: {
@@ -247,7 +246,7 @@ describe("calendar collection", () => {
 		const altCalendarName = "different-calendar";
 		const altCalendar: IcsCalendar = {
 			...getDefaultIcsCalendar(),
-			name: "alternte",
+			events: [getDefaultIcsEvent()],
 		};
 		mockElectronApi.readCalendarFiles.mockImplementationOnce(
 			() => altCalendarFilesPromise,

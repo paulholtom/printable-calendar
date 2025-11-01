@@ -25,13 +25,11 @@
 				:id="getInputId('displayWithOrdinal')"
 				v-model="displayWithOrdinal"
 			/>
-			<label :for="getInputId('displayWithOrdinal')"
-				>Display with ordinal</label
-			>
+			<label :for="getInputId('displayWithOrdinal')">
+				Display with ordinal
+			</label>
 		</div>
-		<template
-			v-if="isOrdinalDisplay(eventModel.nonStandard?.ordinalDisplay)"
-		>
+		<template v-if="eventModel.nonStandard?.ordinalDisplay">
 			<div class="input-and-label">
 				<label :for="getInputId('beforeOrdinal')">Before ordinal</label>
 				<input
@@ -297,7 +295,7 @@ const monthlyType = computed<keyof typeof monthlyTypes>({
 
 const displayWithOrdinal = computed({
 	get() {
-		return isOrdinalDisplay(eventModel.value.nonStandard?.ordinalDisplay);
+		return eventModel.value.nonStandard?.ordinalDisplay !== undefined;
 	},
 	set(newValue) {
 		if (newValue) {
@@ -315,28 +313,6 @@ const displayWithOrdinal = computed({
 		}
 	},
 });
-
-type OrdinalDisplaySettings = {
-	/**
-	 * Text to display before the ordinal.
-	 */
-	before: string;
-	/**
-	 * Text to display after the ordinal.
-	 */
-	after: string;
-};
-
-function isOrdinalDisplay(obj: unknown): obj is OrdinalDisplaySettings {
-	return (
-		typeof obj === "object" &&
-		obj !== null &&
-		"before" in obj &&
-		typeof obj.before === "string" &&
-		"after" in obj &&
-		typeof obj.after === "string"
-	);
-}
 
 function cancel() {
 	promiseResolver?.({ action: EVENT_EDIT_DIALOG_ACTION.CANCEL });

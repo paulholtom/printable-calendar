@@ -3,6 +3,7 @@ import {
 	getDefaultIcsCalendar,
 	getDefaultIcsCalendarCollection,
 	getDefaultIcsEvent,
+	IcsNonStandard,
 	parseIcsCalendarString,
 	serializeIcsCalendar,
 } from "./ts-ics-seam";
@@ -134,6 +135,44 @@ describe(serializeIcsCalendar, () => {
 			"
 		`);
 	});
+
+	it("serializes an event with an ordinal display value", () => {
+		// Arrange
+		const calendar = getDefaultIcsCalendar();
+		const event = getDefaultIcsEvent();
+		event.stamp.date = new Date(2025, 9, 24);
+		event.uid = "some-static-uid";
+		event.start.date = new Date(2025, 9, 25, 12, 15);
+		event.start.type = "DATE-TIME";
+		event.nonStandard = {
+			ordinalDisplay: {
+				before: "Bob's",
+				after: "Birthday",
+			},
+		};
+		calendar.events = [event];
+
+		// Act
+		const result = serializeIcsCalendar(calendar);
+
+		// Assert
+		expect(result).toMatchInlineSnapshot(`
+			"BEGIN:VCALENDAR
+			VERSION:2.0
+			PRODID:paulholtom/printable-calendar
+			BEGIN:VEVENT
+			DTSTAMP;VALUE=DATE-TIME:20251024T060000Z
+			DTSTART;VALUE=DATE-TIME:20251025T181500Z
+			DURATION:PT1H
+			SUMMARY:New Event
+			UID:some-static-uid
+			X-PAULHOLTOM-PRINTABLECALENDAR-ORDINAL-DISPLAY:{"before":"Bob's","after":"B
+			 irthday"}
+			END:VEVENT
+			END:VCALENDAR
+			"
+		`);
+	});
 });
 
 describe(parseIcsCalendarString, () => {
@@ -175,4 +214,57 @@ END:VCALENDAR`;
 		// Assert
 		expect(result.events?.[0].start.date).toEqual(new Date(2025, 9, 25));
 	});
+
+	it("parses a valid ordinal display value", () => {
+		// Arrange
+		const calendar = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:paulholtom/printable-calendar
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20251024T060000Z
+DTSTART;VALUE=DATE-TIME:20251025T181500Z
+DURATION:PT1H
+SUMMARY:New Event
+UID:some-static-uid
+X-PAULHOLTOM-PRINTABLECALENDAR-ORDINAL-DISPLAY:{"before":"Bob's","after":"Birthday"}
+END:VEVENT
+END:VCALENDAR`;
+
+		// Act
+		const result = parseIcsCalendarString(calendar);
+
+		// Assert
+		const expectedNonStandard: IcsNonStandard = {
+			ordinalDisplay: {
+				before: "Bob's",
+				after: "Birthday",
+			},
+		};
+		expect(result.events?.[0].nonStandard).toEqual(expectedNonStandard);
+	});
+
+	it.each([{ invalidValue: "{}" }, { invalidValue: "plain" }])(
+		"throws an error if the ordinal display value is $invalidValue",
+		({ invalidValue }) => {
+			// Arrange
+			const calendar = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:paulholtom/printable-calendar
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20251024T060000Z
+DTSTART;VALUE=DATE-TIME:20251025T181500Z
+DURATION:PT1H
+SUMMARY:New Event
+UID:some-static-uid
+X-PAULHOLTOM-PRINTABLECALENDAR-ORDINAL-DISPLAY:${invalidValue}
+END:VEVENT
+END:VCALENDAR`;
+
+			// Act
+			const act = () => parseIcsCalendarString(calendar);
+
+			// Assert
+			expect(act).toThrowError();
+		},
+	);
 });

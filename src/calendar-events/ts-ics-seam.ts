@@ -8,16 +8,41 @@ import {
 	IcsRecurrenceRuleFrequency as TsIcsRecurrenceRuleFrequency,
 	IcsWeekdayNumber as TsIcsWeekdayNumber,
 } from "ts-ics";
+import z from "zod";
+
+/**
+ * How to display an event with an ordinal.
+ */
+export type OrdinalDisplaySettings = {
+	/**
+	 * Text to display before the ordinal.
+	 */
+	before: string;
+	/**
+	 * Text to display after the ordinal.
+	 */
+	after: string;
+};
+
+/**
+ * Non standard event properties.
+ */
+export type IcsNonStandard = {
+	/**
+	 * How to display an event with an ordinal.
+	 */
+	ordinalDisplay?: OrdinalDisplaySettings;
+};
 
 /**
  * A calendar.
  */
-export type IcsCalendar = TsIcsCalendar;
+export type IcsCalendar = TsIcsCalendar<IcsNonStandard>;
 
 /**
  * A single calendar event.
  */
-export type IcsEvent = TsIcsEvent;
+export type IcsEvent = TsIcsEvent<IcsNonStandard>;
 
 /**
  * Rules describe how an event recurrs.
@@ -55,6 +80,7 @@ export function getDefaultIcsEvent(): IcsEvent {
 		duration: { hours: 1 },
 		summary: "New Event",
 		uid: `${crypto.randomUUID()}@paulholtom/printable-calendar`,
+		nonStandard: {},
 	};
 }
 
@@ -67,6 +93,7 @@ export function getDefaultIcsCalendar(): IcsCalendar {
 	return {
 		version: "2.0",
 		prodId: "paulholtom/printable-calendar",
+		nonStandard: {},
 	};
 }
 
@@ -76,6 +103,12 @@ export function getDefaultIcsCalendar(): IcsCalendar {
 export function getDefaultIcsCalendarCollection(): IcsCalendarCollection {
 	return {};
 }
+
+/**
+ * The name used for the ordinal display object in calendar files.
+ */
+export const ORIDNAL_DISPLAY_NAME =
+	"X-PAULHOLTOM-PRINTABLECALENDAR-ORDINAL-DISPLAY";
 
 /**
  * @param calendar The calendar to serialize.
@@ -105,7 +138,16 @@ export function serializeIcsCalendar(calendar: IcsCalendar): string {
 				})
 			: undefined,
 	};
-	return generateIcsCalendar(normalizedCalendar);
+	return generateIcsCalendar<IcsNonStandard>(normalizedCalendar, {
+		nonStandard: {
+			ordinalDisplay: {
+				name: ORIDNAL_DISPLAY_NAME,
+				generate(value) {
+					return { value: JSON.stringify(value) };
+				},
+			},
+		},
+	});
 }
 
 /**
@@ -114,7 +156,20 @@ export function serializeIcsCalendar(calendar: IcsCalendar): string {
  */
 export function parseIcsCalendarString(unparsed: string): IcsCalendar {
 	try {
-		const calendar = parseIcsCalendar(unparsed);
+		const calendar = parseIcsCalendar<IcsNonStandard>(unparsed, {
+			nonStandard: {
+				ordinalDisplay: {
+					name: ORIDNAL_DISPLAY_NAME,
+					convert(line) {
+						return JSON.parse(line.value);
+					},
+					schema: z.object({
+						before: z.string(),
+						after: z.string(),
+					}),
+				},
+			},
+		});
 		calendar.events?.forEach((event) => {
 			if (event.start.type === "DATE") {
 				event.start.date = new Date(

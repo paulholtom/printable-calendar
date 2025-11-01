@@ -1,6 +1,7 @@
 import {
 	getDefaultIcsEvent,
 	IcsEvent,
+	IcsNonStandard,
 	IcsRecurrenceRule,
 } from "@/calendar-events";
 import { getDaysOfWeek } from "@/dates";
@@ -779,6 +780,91 @@ describe.each([
 			byMonthday: [29],
 		};
 		expect(getEmittedEvent(wrapper).recurrenceRule).toEqual(expectedResult);
+	});
+
+	it.each([
+		{ originalNonStandardValue: undefined },
+		{ originalNonStandardValue: {} },
+	])(
+		"adds ordinal display settings when the nonStandard value is originally $originalNonStandardValue",
+		async ({ originalNonStandardValue }) => {
+			// Arrange
+			const event: IcsEvent = {
+				...getDefaultIcsEvent(),
+				start: {
+					date: new Date(2025, 9, 22),
+				},
+				nonStandard: originalNonStandardValue,
+			};
+			const wrapper = await callComponentFunction(eventName, {
+				event,
+				calendarOptions: {
+					sourceCalendar: "some-calendar",
+					calendarNames: ["some-calendar"],
+				},
+			});
+			const beforeText = "Bob's";
+			const afterText = "Birthday";
+
+			// Act
+			const dialog = wrapper.getByRole("dialog");
+			await fireEvent.click(
+				within(dialog).getByLabelText("Display with ordinal"),
+			);
+			await fireEvent.update(
+				within(dialog).getByLabelText("Before ordinal"),
+				beforeText,
+			);
+			await fireEvent.update(
+				within(dialog).getByLabelText("After ordinal"),
+				afterText,
+			);
+			await fireEvent.click(
+				within(dialog).getByRole("button", { name: "Save" }),
+			);
+
+			// Assert
+			const expectedResult: IcsNonStandard = {
+				ordinalDisplay: {
+					before: beforeText,
+					after: afterText,
+				},
+			};
+			expect(getEmittedEvent(wrapper).nonStandard).toEqual(
+				expectedResult,
+			);
+		},
+	);
+
+	it("removes an existing ordinal display value", async () => {
+		// Arrange
+		const event: IcsEvent = {
+			...getDefaultIcsEvent(),
+			start: {
+				date: new Date(2025, 9, 22),
+			},
+			nonStandard: { ordinalDisplay: { before: "A", after: "B" } },
+		};
+		const wrapper = await callComponentFunction(eventName, {
+			event,
+			calendarOptions: {
+				sourceCalendar: "some-calendar",
+				calendarNames: ["some-calendar"],
+			},
+		});
+
+		// Act
+		const dialog = wrapper.getByRole("dialog");
+		await fireEvent.click(
+			within(dialog).getByLabelText("Display with ordinal"),
+		);
+		await fireEvent.click(
+			within(dialog).getByRole("button", { name: "Save" }),
+		);
+
+		// Assert
+		const expectedResult: IcsNonStandard = {};
+		expect(getEmittedEvent(wrapper).nonStandard).toEqual(expectedResult);
 	});
 });
 
