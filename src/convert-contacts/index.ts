@@ -40,11 +40,17 @@ export function convertGoogleContactsToCalendar(
 		]),
 	) as Record<keyof typeof COLUMN_HEADINGS, number>;
 
-	const errors = Object.entries(columnIndexes)
-		.map(([type, index]) =>
-			index < 0
+	const requiredColumns: (keyof typeof COLUMN_HEADINGS)[] = [
+		"firstName",
+		"lastName",
+		"birthDay",
+	];
+
+	const errors = requiredColumns
+		.map((type) =>
+			columnIndexes[type] < 0
 				? new Error(
-						`Expected a column heading of ${COLUMN_HEADINGS[type as keyof typeof COLUMN_HEADINGS]} but it wasn't found.`,
+						`Expected a column heading of ${COLUMN_HEADINGS[type]} but it wasn't found.`,
 					)
 				: undefined,
 		)
@@ -81,16 +87,18 @@ export function convertGoogleContactsToCalendar(
 				);
 			}
 
-			const unparsedEventDate = row[columnIndexes.eventDate];
-			const eventDescription = row[columnIndexes.eventName];
-			if (unparsedEventDate.length === 10 && eventDescription) {
-				calendar.events.push(
-					createEvent({
-						contactName,
-						unparsedDate: unparsedEventDate,
-						eventDescription,
-					}),
-				);
+			if (columnIndexes.eventDate >= 0 && columnIndexes.eventName >= 0) {
+				const unparsedEventDate = row[columnIndexes.eventDate];
+				const eventDescription = row[columnIndexes.eventName];
+				if (unparsedEventDate.length === 10 && eventDescription) {
+					calendar.events.push(
+						createEvent({
+							contactName,
+							unparsedDate: unparsedEventDate,
+							eventDescription,
+						}),
+					);
+				}
 			}
 		}
 		row = reader.readNextRow();

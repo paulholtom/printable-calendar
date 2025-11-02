@@ -27,22 +27,25 @@ describe(convertGoogleContactsToCalendar, () => {
 		const result = convertGoogleContactsToCalendar("not,right");
 
 		// Assert
-		expect(result).toEqual(
-			Object.values(COLUMN_HEADINGS).map(
-				(name) =>
-					new Error(
-						`Expected a column heading of ${name} but it wasn't found.`,
-					),
+		expect(result).toEqual([
+			new Error(
+				`Expected a column heading of ${COLUMN_HEADINGS.firstName} but it wasn't found.`,
 			),
-		);
+			new Error(
+				`Expected a column heading of ${COLUMN_HEADINGS.lastName} but it wasn't found.`,
+			),
+			new Error(
+				`Expected a column heading of ${COLUMN_HEADINGS.birthDay} but it wasn't found.`,
+			),
+		]);
 	});
-	const VALID_COLUMN_HEADINGS = `${COLUMN_HEADINGS.firstName},${COLUMN_HEADINGS.lastName},${COLUMN_HEADINGS.birthDay},${COLUMN_HEADINGS.eventName},${COLUMN_HEADINGS.eventDate}\n`;
+	const ALL_VALID_COLUMN_HEADINGS = `${COLUMN_HEADINGS.firstName},${COLUMN_HEADINGS.lastName},${COLUMN_HEADINGS.birthDay},${COLUMN_HEADINGS.eventName},${COLUMN_HEADINGS.eventDate}\n`;
 
 	it("returns an error if a row has a different number of columns than the headings", () => {
 		// Arrange
 		// Act
 		const result = convertGoogleContactsToCalendar(
-			`${VALID_COLUMN_HEADINGS}a,b\n`,
+			`${ALL_VALID_COLUMN_HEADINGS}a,b\n`,
 		);
 
 		// Assert
@@ -233,7 +236,7 @@ describe(convertGoogleContactsToCalendar, () => {
 		},
 	])("produces $produces when $when", ({ csvRows, expectedEvents }) => {
 		// Arrange
-		const fileContents = `${VALID_COLUMN_HEADINGS}${csvRows
+		const fileContents = `${ALL_VALID_COLUMN_HEADINGS}${csvRows
 			.map(
 				(row) =>
 					`${row.firstName ?? ""},${row.lastName ?? ""},${row.birthDay ?? ""},${row.eventName ?? ""},${row.eventDate ?? ""}\n`,
@@ -247,6 +250,37 @@ describe(convertGoogleContactsToCalendar, () => {
 		const expectedResult: IcsCalendar = {
 			...getDefaultIcsCalendar(),
 			events: expectedEvents,
+		};
+		expect(result).toEqual(expectedResult);
+	});
+
+	it("can read birthdays from a file with no additional events", () => {
+		// Arrange
+		// Act
+		const result = convertGoogleContactsToCalendar(
+			`${COLUMN_HEADINGS.firstName},${COLUMN_HEADINGS.lastName},${COLUMN_HEADINGS.birthDay}\nSome,Guy,1974-04-27`,
+		);
+
+		// Assert
+		const expectedResult: IcsCalendar = {
+			...getDefaultIcsCalendar(),
+			events: [
+				{
+					...getDefaultIcsEvent(),
+					uid: expect.any(String),
+					start: { date: new Date(1974, 3, 27), type: "DATE" },
+					summary: "Some Guy Birthday",
+					recurrenceRule: {
+						frequency: "YEARLY",
+					},
+					nonStandard: {
+						ordinalDisplay: {
+							before: "Some Guy",
+							after: "Birthday",
+						},
+					},
+				},
+			],
 		};
 		expect(result).toEqual(expectedResult);
 	});
