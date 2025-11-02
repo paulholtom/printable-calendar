@@ -4,21 +4,33 @@
 		<AlertDialog ref="alertDialog" />
 		<DialogLayout
 			v-model:is-open="newCalendarDialogOpen"
-			title="Enter a Name"
+			title="Create a Calendar"
 			:include-close-button="true"
 		>
-			<label :for="getInputId('new-calendar-name')">Name</label>
-			<input
-				type="text"
-				v-model="newCalendarName"
-				:id="getInputId('new-calendar-name')"
-			/>
+			<div class="input-and-label">
+				<label :for="getInputId('new-calendar-name')">Name</label>
+				<input
+					type="text"
+					v-model="newCalendarName"
+					:id="getInputId('new-calendar-name')"
+				/>
+			</div>
+			<div class="input-and-label" v-if="addDialogMode === 'import'">
+				<label :for="getInputId('import-file')">Select File</label>
+				<input
+					type="file"
+					accept=".csv"
+					:id="getInputId('import-file')"
+					@change="importFileChanged"
+				/>
+			</div>
 			<template #footer>
 				<button @click="closeAddDialog()">Cancel</button>
 				<button @click="createCalendar()">Create Calendar</button>
 			</template>
 		</DialogLayout>
-		<button @click="showAddDialog()">Add a Calendar</button>
+		<button @click="showAddDialog('new')">Add a Calendar</button>
+		<button @click="showAddDialog('import')">Import Contacts</button>
 		<button @click="selectCalendarDirectory()">
 			Select Calendar Directory
 		</button>
@@ -47,6 +59,7 @@ import {
 	getDefaultIcsCalendar,
 	useIcsCalendarCollection,
 } from "@/calendar-events";
+import { convertGoogleContactsToCalendar } from "@/convert-contacts";
 import { useUserConfig } from "@/user-config";
 import { computed, ref, useTemplateRef } from "vue";
 import AlertDialog from "./alert-dialog.vue";
@@ -65,11 +78,15 @@ const newCalendarDialogOpen = ref(false);
 const newCalendarName = ref("");
 
 function closeAddDialog(): void {
+	importFileContents.value = undefined;
 	newCalendarDialogOpen.value = false;
 	newCalendarName.value = "";
 }
 
-async function showAddDialog(): Promise<void> {
+const addDialogMode = ref<"new" | "import">("new");
+async function showAddDialog(
+	mode: (typeof addDialogMode)["value"],
+): Promise<void> {
 	if (userConfig.value.calendarDirectory === undefined) {
 		await selectCalendarDirectory();
 	}
@@ -79,8 +96,21 @@ async function showAddDialog(): Promise<void> {
 		);
 		return;
 	}
+	addDialogMode.value = mode;
 	newCalendarDialogOpen.value = true;
 	newCalendarName.value = "";
+}
+
+const importFileContents = ref<string | undefined>(undefined);
+async function importFileChanged(event: Event) {
+	if (
+		!(event.target instanceof HTMLInputElement) ||
+		event.target.files?.length !== 1
+	) {
+		importFileContents.value = undefined;
+		return;
+	}
+	importFileContents.value = await event.target.files[0].text();
 }
 
 async function selectCalendarDirectory(): Promise<void> {
@@ -99,8 +129,26 @@ function createCalendar(): void {
 		alertDialog.value?.show("A calendar with that name already exists.");
 		return;
 	}
+	if (
+		addDialogMode.value === "import" &&
+		importFileContents.value === undefined
+	) {
+		alertDialog.value?.show("You haven't selected a file to import.");
+		return;
+	}
+	const newCalendar =
+		addDialogMode.value === "import" && importFileContents.value
+			? convertGoogleContactsToCalendar(importFileContents.value)
+			: getDefaultIcsCalendar();
 
-	calendarCollection.value[newCalendarName.value] = getDefaultIcsCalendar();
+	if (Array.isArray(newCalendar)) {
+		alertDialog.value?.show(
+			newCalendar.map((error) => error.message).join("\n"),
+		);
+		return;
+	}
+
+	calendarCollection.value[newCalendarName.value] = newCalendar;
 	userConfig.value.calendars[newCalendarName.value] = {
 		disabled: false,
 	};
