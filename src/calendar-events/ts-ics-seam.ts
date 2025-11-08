@@ -1,5 +1,6 @@
-import { parseIcsCalendar } from "@ts-ics/schema-zod";
+import { zIcsCalendar } from "@ts-ics/schema-zod";
 import {
+	convertIcsCalendar,
 	extendByRecurrenceRule,
 	generateIcsCalendar,
 	IcsCalendar as TsIcsCalendar,
@@ -156,20 +157,41 @@ export function serializeIcsCalendar(calendar: IcsCalendar): string {
  */
 export function parseIcsCalendarString(unparsed: string): IcsCalendar {
 	try {
-		const calendar = parseIcsCalendar<IcsNonStandard>(unparsed, {
-			nonStandard: {
-				ordinalDisplay: {
-					name: ORIDNAL_DISPLAY_NAME,
-					convert(line) {
-						return JSON.parse(line.value);
+		const calendar = convertIcsCalendar<IcsNonStandard>(
+			undefined,
+			unparsed,
+			{
+				nonStandard: {
+					ordinalDisplay: {
+						name: ORIDNAL_DISPLAY_NAME,
+						convert(line) {
+							return JSON.parse(line.value);
+						},
+						schema: z.object({
+							before: z.string(),
+							after: z.string(),
+						}),
 					},
-					schema: z.object({
-						before: z.string(),
-						after: z.string(),
-					}),
 				},
 			},
-		});
+		);
+
+		// Fix some potential errors before validating with zod.
+		if (calendar.events) {
+			for (let i = 0; i < calendar.events.length; ++i) {
+				if (calendar.events[i].summary === undefined) {
+					calendar.events[i].summary = "(No title)";
+				}
+				if (
+					calendar.events[i].duration === undefined &&
+					calendar.events[i].end === undefined
+				) {
+					calendar.events[i].duration = { hours: 1 };
+				}
+			}
+		}
+
+		zIcsCalendar.parse(calendar);
 		calendar.events?.forEach((event) => {
 			if (event.start.type === "DATE") {
 				event.start.date = new Date(

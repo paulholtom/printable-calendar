@@ -1,3 +1,4 @@
+import { IcsDuration } from "ts-ics";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	getDefaultIcsCalendar,
@@ -192,6 +193,47 @@ describe(parseIcsCalendarString, () => {
 
 		// Assert
 		expect(result).toEqual(calendar);
+	});
+
+	it("sets the summary to (No title) when an event has no summary instead of throwing an error", () => {
+		// Arrange
+		const calendar = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:paulholtom/printable-calendar
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20251024T060000Z
+DTSTART;VALUE=DATE-TIME:20251025T181500Z
+DURATION:PT1H
+UID:some-static-uid
+END:VEVENT
+END:VCALENDAR`;
+
+		// Act
+		const result = parseIcsCalendarString(calendar);
+
+		// Assert
+		expect(result.events?.[0].summary).toEqual("(No title)");
+	});
+
+	it("sets the duration to 1 hour when an event has no duration or end time instead of throwing an error", () => {
+		// Arrange
+		const calendar = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:paulholtom/printable-calendar
+BEGIN:VEVENT
+DTSTAMP;VALUE=DATE-TIME:20251024T060000Z
+DTSTART;VALUE=DATE-TIME:20251025T181500Z
+SUMMARY:Some event
+UID:some-static-uid
+END:VEVENT
+END:VCALENDAR`;
+
+		// Act
+		const result = parseIcsCalendarString(calendar);
+
+		// Assert
+		const expectedDuration: IcsDuration = { hours: 1 };
+		expect(result.events?.[0].duration).toEqual(expectedDuration);
 	});
 
 	it("parses DATE type start times as midnight local time", () => {
