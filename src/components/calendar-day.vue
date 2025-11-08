@@ -64,6 +64,7 @@ function getEventName(event: EventOccurrence) {
 <style lang="css" scoped>
 .date-display {
 	text-align: center;
+	font: 400 1.5em / 1.5em sans-serif;
 }
 
 .previous-month,
