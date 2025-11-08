@@ -111,10 +111,11 @@ const daysOfWeek = getDaysOfWeek("long");
 	margin: 0;
 	padding: 0;
 	box-sizing: border-box;
-	height: 100%;
+	min-height: 100%;
 
 	@media print {
 		break-before: always;
+		min-height: unset;
 		height: 100vh;
 	}
 }
