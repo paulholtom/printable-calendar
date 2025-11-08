@@ -7,6 +7,9 @@
 		<header class="date-display">{{ date.getDate() }}</header>
 		<p
 			class="event"
+			:class="{
+				'event-with-time': event.event.start.type === 'DATE-TIME',
+			}"
 			v-for="event in events"
 			:key="event.date.getTime() + event.event.uid"
 			@click.stop="$emit('eventClicked', event)"
@@ -74,9 +77,12 @@ function getEventName(event: EventOccurrence) {
 
 .event {
 	cursor: pointer;
-	display: grid;
-	grid-template-columns: max-content 1fr;
-	gap: 5px;
-	align-items: center;
+
+	&.event-with-time {
+		display: grid;
+		grid-template-columns: max-content 1fr;
+		gap: 10px;
+		align-items: center;
+	}
 }
 </style>
