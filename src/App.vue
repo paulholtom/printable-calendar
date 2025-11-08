@@ -8,9 +8,9 @@
 			}}</pre>
 		</template>
 		<template v-else-if="configFileLoaded">
-			<CalendarListControls />
 			<template v-if="calendarFilesLoaded">
 				<nav class="controls">
+					<CalendarListControls />
 					<EventEditDialog ref="eventEditDialog" />
 					<PrintControls />
 					<NavigationControls />
