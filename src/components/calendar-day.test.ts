@@ -3,8 +3,15 @@ import {
 	getDefaultIcsEvent,
 	IcsEvent,
 } from "@/calendar-events";
+import {
+	getDefaultCalendarOptions,
+	getDefaultUserConfig,
+	USER_CONFIG_KEY,
+	UserConfig,
+} from "@/user-config";
 import { fireEvent, render } from "@testing-library/vue";
 import { expect, it } from "vitest";
+import { ref } from "vue";
 import CalendarDay from "./calendar-day.vue";
 
 it("displays the provided day", () => {
@@ -13,6 +20,11 @@ it("displays the provided day", () => {
 
 	// Act
 	const wrapper = render(CalendarDay, {
+		global: {
+			provide: {
+				[USER_CONFIG_KEY]: ref(getDefaultUserConfig()),
+			},
+		},
 		props: { date, variant: "current-month", events: undefined },
 	});
 
@@ -30,6 +42,11 @@ it("displays provided events", () => {
 
 	// Act
 	const wrapper = render(CalendarDay, {
+		global: {
+			provide: {
+				[USER_CONFIG_KEY]: ref(getDefaultUserConfig()),
+			},
+		},
 		props: {
 			date,
 			variant: "current-month",
@@ -41,6 +58,91 @@ it("displays provided events", () => {
 
 	// Assert
 	wrapper.getByText(event.summary);
+});
+
+it("sets the event colours to defaults if there is no values in the user config", () => {
+	// Arrange
+	const date = new Date(2025, 5, 10);
+	const event: IcsEvent = {
+		...getDefaultIcsEvent(),
+		summary: "Some Event",
+	};
+
+	// Act
+	const wrapper = render(CalendarDay, {
+		global: {
+			provide: {
+				[USER_CONFIG_KEY]: ref(getDefaultUserConfig()),
+			},
+		},
+		props: {
+			date,
+			variant: "current-month",
+			events: [
+				{ date, instanceOfEvent: 0, sourceCalendar: "default", event },
+			],
+		},
+	});
+
+	// Assert
+	expect(
+		wrapper
+			.getByText(event.summary)
+			.parentElement?.style.getPropertyValue("--event-background-colour"),
+	).toBe("#ffffff");
+	expect(
+		wrapper
+			.getByText(event.summary)
+			.parentElement?.style.getPropertyValue("--event-foreground-colour"),
+	).toBe("#000000");
+});
+
+it("sets the event colours to colours in the user config", () => {
+	// Arrange
+	const date = new Date(2025, 5, 10);
+	const event: IcsEvent = {
+		...getDefaultIcsEvent(),
+		summary: "Some Event",
+	};
+	const sourceCalendar = "some-calendar";
+	const backgroundColour = "#abc123";
+	const foregroundColour = "#def456";
+	const userConfig: UserConfig = {
+		...getDefaultUserConfig(),
+		calendars: {
+			[sourceCalendar]: {
+				...getDefaultCalendarOptions(),
+				backgroundColour,
+				foregroundColour,
+			},
+		},
+	};
+
+	// Act
+	const wrapper = render(CalendarDay, {
+		global: {
+			provide: {
+				[USER_CONFIG_KEY]: ref(userConfig),
+			},
+		},
+		props: {
+			date,
+			variant: "current-month",
+			events: [{ date, instanceOfEvent: 0, sourceCalendar, event }],
+		},
+	});
+
+	// Assert
+	expect(
+		wrapper
+			.getByText(event.summary)
+			.parentElement?.style.getPropertyValue("--event-background-colour"),
+	).toBe(backgroundColour);
+	expect(
+		wrapper
+			.getByText(event.summary)
+			.parentElement?.style.getPropertyValue("--event-foreground-colour"),
+	).toBe(foregroundColour);
 });
 
 it("displays the summary for the 0th instance of an event, even if there's an ordinal display specified", () => {
@@ -56,6 +158,11 @@ it("displays the summary for the 0th instance of an event, even if there's an or
 
 	// Act
 	const wrapper = render(CalendarDay, {
+		global: {
+			provide: {
+				[USER_CONFIG_KEY]: ref(getDefaultUserConfig()),
+			},
+		},
 		props: {
 			date,
 			variant: "current-month",
@@ -82,6 +189,11 @@ it("uses the ordinal display settings for an instance other than 0", () => {
 
 	// Act
 	const wrapper = render(CalendarDay, {
+		global: {
+			provide: {
+				[USER_CONFIG_KEY]: ref(getDefaultUserConfig()),
+			},
+		},
 		props: {
 			date,
 			variant: "current-month",
@@ -109,6 +221,11 @@ it("displays time if an event date is a DATE-TIME", () => {
 
 	// Act
 	const wrapper = render(CalendarDay, {
+		global: {
+			provide: {
+				[USER_CONFIG_KEY]: ref(getDefaultUserConfig()),
+			},
+		},
 		props: {
 			date,
 			variant: "current-month",
@@ -141,6 +258,11 @@ it("doesn't display the time if an event date is a DATE", () => {
 
 	// Act
 	const wrapper = render(CalendarDay, {
+		global: {
+			provide: {
+				[USER_CONFIG_KEY]: ref(getDefaultUserConfig()),
+			},
+		},
 		props: {
 			date,
 			variant: "current-month",
@@ -165,6 +287,11 @@ it("emits when a day is clicked", async () => {
 	// Arrange
 	const date = new Date(2025, 5, 10);
 	const wrapper = render(CalendarDay, {
+		global: {
+			provide: {
+				[USER_CONFIG_KEY]: ref(getDefaultUserConfig()),
+			},
+		},
 		props: {
 			date,
 			variant: "current-month",
@@ -188,6 +315,11 @@ it("emits when an event is clicked", async () => {
 		summary: "Some Event",
 	};
 	const wrapper = render(CalendarDay, {
+		global: {
+			provide: {
+				[USER_CONFIG_KEY]: ref(getDefaultUserConfig()),
+			},
+		},
 		props: {
 			date,
 			variant: "current-month",

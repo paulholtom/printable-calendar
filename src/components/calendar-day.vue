@@ -13,6 +13,10 @@
 			v-for="event in events"
 			:key="event.date.getTime() + event.event.uid"
 			@click.stop="$emit('eventClicked', event)"
+			:style="{
+				'--event-background-colour': getEventBackgroundColour(event),
+				'--event-foreground-colour': getEventForegroundColour(event),
+			}"
 		>
 			<span class="time" v-if="event.event.start.type === 'DATE-TIME'">
 				{{
@@ -30,7 +34,10 @@
 <script setup lang="ts">
 import { EventOccurrence } from "@/calendar-events";
 import { addOrdinalSuffix } from "@/services";
+import { useUserConfig } from "@/user-config";
 import { CalendarDayVariant } from "./calendar-day-variant";
+
+const userConfig = useUserConfig();
 
 defineProps<{
 	/**
@@ -62,6 +69,20 @@ function getEventName(event: EventOccurrence) {
 
 	return `${event.event.nonStandard.ordinalDisplay.before} ${addOrdinalSuffix(event.instanceOfEvent)} ${event.event.nonStandard.ordinalDisplay.after}`;
 }
+
+function getEventBackgroundColour(event: EventOccurrence): string {
+	return (
+		userConfig.value.calendars[event.sourceCalendar]?.backgroundColour ??
+		"#ffffff"
+	);
+}
+
+function getEventForegroundColour(event: EventOccurrence): string {
+	return (
+		userConfig.value.calendars[event.sourceCalendar]?.foregroundColour ??
+		"#000000"
+	);
+}
 </script>
 
 <style lang="css" scoped>
@@ -77,6 +98,8 @@ function getEventName(event: EventOccurrence) {
 
 .event {
 	cursor: pointer;
+	background-color: var(--event-background-colour);
+	color: var(--event-foreground-colour);
 
 	&.event-with-time {
 		display: grid;

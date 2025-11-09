@@ -15,6 +15,7 @@ import { nextTick } from "vue";
 import App from "./App.vue";
 import { ElectronApi } from "./electron-api";
 import {
+	getDefaultCalendarOptions,
 	getDefaultUserConfig,
 	provideUserConfig,
 	UserConfig,
@@ -50,7 +51,7 @@ function getUserConfigWithRequiredSettings(): UserConfig {
 	return {
 		...getDefaultUserConfig(),
 		calendarDirectory: CALENDAR_DIRECTORY,
-		calendars: { [FIRST_CALENDAR_NAME]: { disabled: false } },
+		calendars: { [FIRST_CALENDAR_NAME]: getDefaultCalendarOptions() },
 	};
 }
 

@@ -59,6 +59,7 @@ import EventEditDialog from "./components/event-edit-dialog.vue";
 import NavigationControls from "./components/navigation-controls.vue";
 import PrintControls from "./components/print-controls.vue";
 import {
+	getDefaultCalendarOptions,
 	getDefaultUserConfig,
 	parseUserConfig,
 	provideUserConfig,
@@ -164,9 +165,8 @@ async function setupIcsCalendarCollection(): Promise<void> {
 		);
 
 		calendarNames.forEach((calendarName) => {
-			calendarConfig[calendarName] = calendarConfig[calendarName] ?? {
-				disabled: false,
-			};
+			calendarConfig[calendarName] =
+				calendarConfig[calendarName] ?? getDefaultCalendarOptions();
 		});
 
 		configFile.value.calendars = Object.fromEntries(

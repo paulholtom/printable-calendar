@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { inject, provide, ref } from "vue";
 import {
+	CalendarOptions,
 	getDefaultUserConfig,
 	parseUserConfig,
 	provideUserConfig,
@@ -44,6 +45,54 @@ describe(parseUserConfig, () => {
 		const expected: UserConfig = {
 			...getDefaultUserConfig(),
 			pdfDirectory: "some-folder",
+		};
+
+		// Act
+		const result = parseUserConfig(JSON.stringify(expected));
+
+		// Assert
+		expect(result).toEqual(expected);
+	});
+
+	it("sets default values for the background and foreground colour for a calendar if they aren't set", () => {
+		// Arrange
+		const original: Omit<UserConfig, "calendars"> & {
+			calendars: Record<string, Partial<CalendarOptions> | undefined>;
+		} = {
+			...getDefaultUserConfig(),
+			calendars: {
+				"some-calendar": { disabled: false },
+			},
+		};
+
+		// Act
+		const result = parseUserConfig(JSON.stringify(original));
+
+		// Assert
+		const expected: UserConfig = {
+			...original,
+			calendars: {
+				"some-calendar": {
+					disabled: false,
+					backgroundColour: "#ffffff",
+					foregroundColour: "#000000",
+				},
+			},
+		};
+		expect(result).toEqual(expected);
+	});
+
+	it("keeps background and foreground colours for a calendar if they are set", () => {
+		// Arrange
+		const expected: UserConfig = {
+			...getDefaultUserConfig(),
+			calendars: {
+				"some-calendar": {
+					disabled: false,
+					backgroundColour: "#cccccc",
+					foregroundColour: "#dddddd",
+				},
+			},
 		};
 
 		// Act

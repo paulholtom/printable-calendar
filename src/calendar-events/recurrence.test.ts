@@ -1,4 +1,8 @@
-import { getDefaultUserConfig, UserConfig } from "@/user-config";
+import {
+	getDefaultCalendarOptions,
+	getDefaultUserConfig,
+	UserConfig,
+} from "@/user-config";
 import { describe, expect, it } from "vitest";
 import {
 	EventOccurrence,
@@ -227,7 +231,7 @@ describe(getEventsByDateFromCalendarCollection, () => {
 		const userConfig: UserConfig = {
 			...getDefaultUserConfig(),
 			calendars: {
-				other: { disabled: true },
+				other: { ...getDefaultCalendarOptions(), disabled: true },
 			},
 		};
 

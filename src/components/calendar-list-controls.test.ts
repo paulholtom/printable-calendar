@@ -8,6 +8,7 @@ import {
 import { convertGoogleContactsToCalendar } from "@/convert-contacts";
 import { ElectronApi } from "@/electron-api";
 import {
+	getDefaultCalendarOptions,
 	getDefaultUserConfig,
 	USER_CONFIG_KEY,
 	UserConfig,
@@ -489,7 +490,9 @@ it("toggles the disabled value of calenders when clicking on the checkboxes for 
 	const userConfig = ref<UserConfig>({
 		...getDefaultUserConfig(),
 		calendarDirectory: "some-directory",
-		calendars: { [calendarName]: { disabled: false } },
+		calendars: {
+			[calendarName]: { ...getDefaultCalendarOptions(), disabled: false },
+		},
 	});
 	const calendarCollection = ref<IcsCalendarCollection>({
 		...getDefaultIcsCalendarCollection(),
@@ -509,4 +512,78 @@ it("toggles the disabled value of calenders when clicking on the checkboxes for 
 
 	// Assert
 	expect(userConfig.value.calendars[calendarName]?.disabled).toBe(true);
+});
+
+it("sets the background colour of calendars", async () => {
+	// Arrange
+	const calendarName = "some-calendar";
+	const userConfig = ref<UserConfig>({
+		...getDefaultUserConfig(),
+		calendarDirectory: "some-directory",
+		calendars: {
+			[calendarName]: { ...getDefaultCalendarOptions(), disabled: false },
+		},
+	});
+	const calendarCollection = ref<IcsCalendarCollection>({
+		...getDefaultIcsCalendarCollection(),
+		[calendarName]: getDefaultIcsCalendar(),
+	});
+	const wrapper = render(CalendarListControls, {
+		global: {
+			provide: {
+				[USER_CONFIG_KEY]: userConfig,
+				[ICS_CALENDAR_COLLECTION_KEY]: calendarCollection,
+			},
+		},
+	});
+	const newColour = "#cccccc";
+
+	// Act
+	const calendarGroup = wrapper.getByRole("group", { name: calendarName });
+	await fireEvent.update(
+		within(calendarGroup).getByLabelText("Background"),
+		newColour,
+	);
+
+	// Assert
+	expect(userConfig.value.calendars[calendarName]?.backgroundColour).toBe(
+		newColour,
+	);
+});
+
+it("sets the foreground colour of calendars", async () => {
+	// Arrange
+	const calendarName = "some-calendar";
+	const userConfig = ref<UserConfig>({
+		...getDefaultUserConfig(),
+		calendarDirectory: "some-directory",
+		calendars: {
+			[calendarName]: { ...getDefaultCalendarOptions(), disabled: false },
+		},
+	});
+	const calendarCollection = ref<IcsCalendarCollection>({
+		...getDefaultIcsCalendarCollection(),
+		[calendarName]: getDefaultIcsCalendar(),
+	});
+	const wrapper = render(CalendarListControls, {
+		global: {
+			provide: {
+				[USER_CONFIG_KEY]: userConfig,
+				[ICS_CALENDAR_COLLECTION_KEY]: calendarCollection,
+			},
+		},
+	});
+	const newColour = "#cccccc";
+
+	// Act
+	const calendarGroup = wrapper.getByRole("group", { name: calendarName });
+	await fireEvent.update(
+		within(calendarGroup).getByLabelText("Text"),
+		newColour,
+	);
+
+	// Assert
+	expect(userConfig.value.calendars[calendarName]?.foregroundColour).toBe(
+		newColour,
+	);
 });

@@ -10,12 +10,31 @@ const calendarOptions = z.object({
 	 * If events from this calendar should be disabled.
 	 */
 	disabled: z.boolean(),
+	/**
+	 * The background colour for events in this calendar.
+	 */
+	backgroundColour: z.string().default("#ffffff"),
+	/**
+	 * The foreground(text) colour for events in this calendar.
+	 */
+	foregroundColour: z.string().default("#000000"),
 });
 
 /**
  * Options for a calendar.
  */
 export type CalendarOptions = z.infer<typeof calendarOptions>;
+
+/**
+ * @returns Default calendar options.
+ */
+export function getDefaultCalendarOptions(): CalendarOptions {
+	return {
+		disabled: false,
+		backgroundColour: "#ffffff",
+		foregroundColour: "#000000",
+	};
+}
 
 const userConfig_v1_0_0 = z.object({
 	version: z.literal("1.0.0"),

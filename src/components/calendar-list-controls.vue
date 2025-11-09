@@ -40,16 +40,42 @@
 			v-for="{ calendarName, calendarSettings } in filteredCalendars"
 			:key="calendarName"
 		>
-			<input
-				type="checkbox"
-				v-model="calendarSettings.disabled"
-				:id="getInputId('cal-' + calendarName)"
-				:true-value="false"
-				:false-value="true"
-			/>
-			<label :for="getInputId('cal-' + calendarName)">{{
-				calendarName
-			}}</label>
+			<fieldset>
+				<legend>
+					<input
+						type="checkbox"
+						v-model="calendarSettings.disabled"
+						:id="getInputId(calendarName + '-enabled')"
+						:true-value="false"
+						:false-value="true"
+					/>
+					<label :for="getInputId(calendarName + '-enabled')">{{
+						calendarName
+					}}</label>
+				</legend>
+				<template v-if="!calendarSettings.disabled">
+					<div class="input-and-label">
+						<label :for="getInputId(calendarName + '-background')">
+							Background
+						</label>
+						<input
+							type="color"
+							:id="getInputId(calendarName + '-background')"
+							v-model="calendarSettings.backgroundColour"
+						/>
+					</div>
+					<div class="input-and-label">
+						<label :for="getInputId(calendarName + '-foreground')">
+							Text
+						</label>
+						<input
+							type="color"
+							:id="getInputId(calendarName + '-foreground')"
+							v-model="calendarSettings.foregroundColour"
+						/>
+					</div>
+				</template>
+			</fieldset>
 		</div>
 	</fieldset>
 </template>
@@ -60,7 +86,11 @@ import {
 	useIcsCalendarCollection,
 } from "@/calendar-events";
 import { convertGoogleContactsToCalendar } from "@/convert-contacts";
-import { useUserConfig } from "@/user-config";
+import {
+	CalendarOptions,
+	getDefaultCalendarOptions,
+	useUserConfig,
+} from "@/user-config";
 import { computed, ref, useTemplateRef } from "vue";
 import AlertDialog from "./alert-dialog.vue";
 import DialogLayout from "./dialog-layout.vue";
@@ -149,9 +179,8 @@ function createCalendar(): void {
 	}
 
 	calendarCollection.value[newCalendarName.value] = newCalendar;
-	userConfig.value.calendars[newCalendarName.value] = {
-		disabled: false,
-	};
+	userConfig.value.calendars[newCalendarName.value] =
+		getDefaultCalendarOptions();
 
 	closeAddDialog();
 }
@@ -167,7 +196,7 @@ const filteredCalendars = computed(() =>
 				calendarDetails,
 			): calendarDetails is {
 				calendarName: string;
-				calendarSettings: { disabled: boolean };
+				calendarSettings: CalendarOptions;
 			} => calendarDetails.calendarSettings !== undefined,
 		),
 );
