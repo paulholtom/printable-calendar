@@ -8,30 +8,30 @@
 			}}</pre>
 		</template>
 		<template v-else-if="configFileLoaded">
-			<template v-if="calendarFilesLoaded">
-				<nav class="controls">
-					<CalendarListControls />
+			<nav class="controls">
+				<CalendarListControls />
+				<template v-if="calendarFilesLoaded">
 					<EventEditDialog ref="eventEditDialog" />
 					<PrintControls />
 					<NavigationControls />
 					<button @click="addEvent()">Add Event</button>
-				</nav>
-				<main class="calendar-display">
-					<CalendarMonth
-						v-if="configFile.displayDate.month !== undefined"
-						:year="configFile.displayDate.year"
-						:month="configFile.displayDate.month"
-						@event-clicked="editEvent"
-						@day-clicked="(day) => addEvent(day)"
-					/>
-					<CalendarYear
-						v-else
-						:year="configFile.displayDate.year"
-						@event-clicked="editEvent"
-						@day-clicked="(day) => addEvent(day)"
-					/>
-				</main>
-			</template>
+				</template>
+			</nav>
+			<main v-if="calendarFilesLoaded" class="calendar-display">
+				<CalendarMonth
+					v-if="configFile.displayDate.month !== undefined"
+					:year="configFile.displayDate.year"
+					:month="configFile.displayDate.month"
+					@event-clicked="editEvent"
+					@day-clicked="(day) => addEvent(day)"
+				/>
+				<CalendarYear
+					v-else
+					:year="configFile.displayDate.year"
+					@event-clicked="editEvent"
+					@day-clicked="(day) => addEvent(day)"
+				/>
+			</main>
 		</template>
 		<p role="progressbar" v-else>Loading...</p>
 	</div>
