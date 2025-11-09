@@ -313,6 +313,21 @@ async function editEvent(event: EventOccurrence) {
 	}
 }
 
+@media screen {
+	.app {
+		display: flex;
+		flex-direction: row;
+	}
+
+	.controls {
+		flex: 0 0 250px;
+	}
+
+	.calendar-display {
+		padding: 0 1px;
+	}
+}
+
 @media print {
 	.app {
 		height: unset;

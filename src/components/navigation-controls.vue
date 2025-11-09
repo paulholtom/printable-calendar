@@ -12,7 +12,11 @@
 				{{ monthName }}
 			</option>
 		</select>
-		<input type="number" v-model="configFile.displayDate.year" />
+		<input
+			class="year-input"
+			type="number"
+			v-model="configFile.displayDate.year"
+		/>
 		<button @click="next">&gt;&gt;</button>
 	</fieldset>
 </template>
@@ -52,3 +56,9 @@ function next() {
 	}
 }
 </script>
+
+<style lang="css" scoped>
+.year-input {
+	width: 50px;
+}
+</style>

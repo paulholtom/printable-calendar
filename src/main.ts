@@ -127,6 +127,7 @@ app.whenReady().then(() => {
 		const pdfData = await event.sender.printToPDF({
 			pageSize: "A2",
 			margins: { top: 0, left: 0, right: 0, bottom: 0 },
+			printBackground: true,
 		});
 		await fsPromises.writeFile(filePath, pdfData);
 		return filePath;
